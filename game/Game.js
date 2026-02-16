@@ -39,7 +39,7 @@ class Game {
         // Settings
         this.padType = 0; // 0: Single, 1: Dual
         this.padPosX = 50; // 0-100%
-        this.padPosY = 15;  // 0-100% (Default 15 to avoid off-screen)
+        this.padPosY = 25;  // 0-100% (Default 25 to avoid off-screen)
         this.padSize = 100;
         this.screenSize = 100; // 50-100% Game Screen Scale
         this.loadSettings(); // Load saved settings
