@@ -334,15 +334,15 @@ class Renderer {
 
         // 0: PLAY
         this.ctx.fillStyle = game.titleCursor === 0 ? '#ff0' : '#888';
-        this.ctx.fillText("GAME PLAY", 480, menuBaseY + 45);
+        this.ctx.fillText("GAME PLAY", 480, menuBaseY + 40);
 
         // 1: EDIT
         this.ctx.fillStyle = game.titleCursor === 1 ? '#ff0' : '#888';
-        this.ctx.fillText("MAP EDITOR", 480, menuBaseY + 90);
+        this.ctx.fillText("MAP EDITOR", 480, menuBaseY + 75);
 
         // 2: HOW TO PLAY
         this.ctx.fillStyle = game.titleCursor === 2 ? '#ff0' : '#888';
-        this.ctx.fillText("HOW TO PLAY", 480, menuBaseY + 135);
+        this.ctx.fillText("HOW TO PLAY", 480, menuBaseY + 110);
 
         // Settings (Smaller font)
         this.ctx.font = '20px monospace';
@@ -350,18 +350,28 @@ class Renderer {
         // 3: SPEED Option
         this.ctx.fillStyle = game.titleCursor === 3 ? '#ff0' : '#888';
         const speedText = `SPEED: ${game.targetFPS} FPS${game.titleCursor === 3 ? ' < >' : ''}`;
-        this.ctx.fillText(speedText, 480, menuBaseY + 185);
+        this.ctx.fillText(speedText, 480, menuBaseY + 150);
 
-        // 4: PAD Option
+        // 4: PAD TYPE Option
         this.ctx.fillStyle = game.titleCursor === 4 ? '#ff0' : '#888';
-        const modes = ['LEFT', 'CENTER', 'RIGHT', 'DUAL'];
-        const padText = `PAD POS: ${modes[game.padMode]}${game.titleCursor === 4 ? ' < >' : ''}`;
-        this.ctx.fillText(padText, 480, menuBaseY + 215);
+        const typeStr = game.padType === 0 ? "SINGLE" : "DUAL";
+        const typeText = `PAD TYPE: ${typeStr}${game.titleCursor === 4 ? ' < >' : ''}`;
+        this.ctx.fillText(typeText, 480, menuBaseY + 180);
 
-        // 5: SIZE Option
+        // 5: PAD POS
         this.ctx.fillStyle = game.titleCursor === 5 ? '#ff0' : '#888';
-        const sizeText = `PAD SIZE: ${game.padSize}%${game.titleCursor === 5 ? ' < >' : ''}`;
-        this.ctx.fillText(sizeText, 480, menuBaseY + 245);
+        const posText = `PAD POS: DRAG ●${game.titleCursor === 5 ? ' < >' : ''}`;
+        this.ctx.fillText(posText, 480, menuBaseY + 205);
+
+        // 6: SIZE Option
+        this.ctx.fillStyle = game.titleCursor === 6 ? '#ff0' : '#888';
+        const sizeText = `PAD SIZE: ${game.padSize}%${game.titleCursor === 6 ? ' < >' : ''}`;
+        this.ctx.fillText(sizeText, 480, menuBaseY + 230);
+
+        // 7: SCREEN SIZE Option
+        this.ctx.fillStyle = game.titleCursor === 7 ? '#ff0' : '#888';
+        const screenText = `SCREEN SIZE: ${game.screenSize}%${game.titleCursor === 7 ? ' < >' : ''}`;
+        this.ctx.fillText(screenText, 480, menuBaseY + 255);
 
         this.ctx.textAlign = 'start'; // Reset for other draws
     }

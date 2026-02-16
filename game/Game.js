@@ -37,8 +37,12 @@ class Game {
         this.selectMode = 'PLAY';
 
         // Settings
-        this.padMode = 1; // 0:Left, 1:Center, 2:Right, 3:Dual
+        this.padType = 0; // 0: Single, 1: Dual
+        this.padPosX = 50; // 0-100%
+        this.padPosY = 15;  // 0-100% (Default 15 to avoid off-screen)
         this.padSize = 100;
+        this.screenSize = 100; // 50-100% Game Screen Scale
+        this.loadSettings(); // Load saved settings
         this.updatePadLayout(); // Initial Apply
 
         // toDataURL removed to avoid SecurityError with local files
@@ -61,46 +65,69 @@ class Game {
         const p1 = ctrl.querySelector('.primary-pad');
         const p2 = ctrl.querySelector('.secondary-pad');
 
-        ctrl.className = ''; // Reset Container
-        ctrl.style.transform = ''; // Remove container scale
+        // Reset Styles
+        ctrl.className = 'overlay-controls';
+        if (p1) { p1.setAttribute('style', ''); }
+        if (p2) { p2.setAttribute('style', ''); }
 
-        // Reset Child Transforms
-        if (p1) { p1.style.transform = ''; p1.style.transformOrigin = ''; }
-        if (p2) { p2.style.transform = ''; p2.style.transformOrigin = ''; }
+        const s = this.padSize / 100;
 
-        const scale = `scale(${this.padSize / 100})`;
+        if (this.padType === 0) {
+            // SINGLE
+            if (p2) p2.style.display = 'none';
+            if (p1) {
+                p1.style.display = 'grid';
+                p1.style.position = 'absolute';
 
-        if (this.padMode === 0) {
-            // LEFT
-            ctrl.classList.add('mode-left');
-            if (p1) {
-                p1.style.transformOrigin = 'top left';
-                p1.style.transform = scale;
+                // Position represents the CENTER of the pad
+                p1.style.left = `${this.padPosX}%`;
+                p1.style.bottom = `${this.padPosY}%`;
+
+                // Translate -50% X to align center to the left% coordinate
+                // Translate Y based on bottom (if we want bottom handle to be consistent?)
+                // Handle is in center of grid. Grid is mostly centered.
+                // Let's align center-center of pad to the coordinate.
+                // We use bottom for Y-positioning generally?
+                // If padPosY is 0 (bottom edge), handle is at bottom edge.
+                // Let's use generic Translate -50%, 50% relative to bottom-left origin?
+                // Actually: transform origin is center?
+                // transform-origin: top left (default).
+                // Let's stick to: left/bottom are coordinates of the CENTER.
+                p1.style.transform = `translate(-50%, 50%) scale(${s})`;
+                // Wait, if bottom=0%, we want bottom of pad at bottom of screen?
+                // Or Handle at bottom of screen?
+                // If Handle is center, and bottom=0, Handle is at bottom. Half pad is cut off.
+                // This gives full freedom.
             }
-        } else if (this.padMode === 1) {
-            // CENTER
-            ctrl.classList.add('mode-center');
-            if (p1) {
-                p1.style.transformOrigin = 'top center';
-                p1.style.transform = scale;
-            }
-        } else if (this.padMode === 2) {
-            // RIGHT
-            ctrl.classList.add('mode-right');
-            if (p1) {
-                p1.style.transformOrigin = 'top right';
-                p1.style.transform = scale;
-            }
-        } else if (this.padMode === 3) {
+        } else {
             // DUAL
-            ctrl.classList.add('mode-dual');
+            if (p2) p2.style.display = 'grid';
+            if (p1) p1.style.display = 'grid';
+
+            // padPosX represents distance of CENTER from the nearest EDGE
+            // 0 = Center is at Edge. 50 = Center is at Screen Center.
+            // visualPosX is clamped to avoided crossing? User can decide overlap.
+
+            const dist = this.padPosX;
+            const bottom = this.padPosY;
+
             if (p1) {
-                p1.style.transformOrigin = 'top left';
-                p1.style.transform = scale;
+                p1.style.position = 'absolute';
+                p1.style.left = `${dist}%`; // From Left
+                p1.style.bottom = `${bottom}%`;
+                p1.style.transform = `translate(-50%, 50%) scale(${s})`;
             }
+
             if (p2) {
-                p2.style.transformOrigin = 'top right';
-                p2.style.transform = scale;
+                p2.style.position = 'absolute';
+                p2.style.right = `${dist}%`; // From Right
+                p2.style.bottom = `${bottom}%`;
+                p2.style.transform = `translate(50%, 50%) scale(${s})`;
+                // Note: right: X%. translate 50% moves it Right (away from center).
+                // If dist=0 (Right Edge), right=0. translate 50% moves Center to Right Edge?
+                // No. right:0 aligns Right Edge of element to Right Edge of container.
+                // translate(50%) moves it right by 50% width. Center is at Edge.
+                // Correct.
             }
         }
     }
@@ -215,41 +242,73 @@ class Game {
         const up = (this.input.keys.ArrowUp || this.input.keys.w || this.input.keys['8']) && !this.input.prevUp;
         const down = (this.input.keys.ArrowDown || this.input.keys.s || this.input.keys['2']) && !this.input.prevDown;
 
-        if (down) this.titleCursor = (this.titleCursor + 1) % 6;
-        if (up) this.titleCursor = (this.titleCursor + 5) % 6; // +5 is -1
+        if (down) this.titleCursor = (this.titleCursor + 1) % 8;
+        if (up) this.titleCursor = (this.titleCursor + 7) % 8; // +7 is -1
+
+        // Update Drag Handle Visibility
+        const handles = document.querySelectorAll('.drag-handle');
+        const showHandle = (this.titleCursor === 5);
+        handles.forEach(h => {
+            if (showHandle) h.classList.add('visible');
+            else h.classList.remove('visible');
+        });
 
         // Adjustment (Left/Right)
         const left = (this.input.keys.ArrowLeft || this.input.keys.a || this.input.keys['4']) && !this.input.prevLeft;
         const right = (this.input.keys.ArrowRight || this.input.keys.d || this.input.keys['6']) && !this.input.prevRight;
+
+        // Fast adjust hold
+        const holdLeft = (this.input.keys.ArrowLeft || this.input.keys.a || this.input.keys['4']);
+        const holdRight = (this.input.keys.ArrowRight || this.input.keys.d || this.input.keys['6']);
 
         if (this.titleCursor === 3) {
             // SPEED
             if (left) {
                 this.targetFPS = Math.max(10, this.targetFPS - 5);
                 this.deltaTime = 1000 / this.targetFPS;
+                this.saveSettings();
             }
             if (right) {
                 this.targetFPS = Math.min(60, this.targetFPS + 5);
                 this.deltaTime = 1000 / this.targetFPS;
+                this.saveSettings();
             }
         } else if (this.titleCursor === 4) {
             // PAD TYPE
-            if (left) {
-                this.padMode = (this.padMode + 3) % 4; // -1
+            if (left || right) {
+                this.padType = (this.padType === 0) ? 1 : 0;
                 this.updatePadLayout();
-            }
-            if (right) {
-                this.padMode = (this.padMode + 1) % 4;
-                this.updatePadLayout();
+                this.saveSettings();
             }
         } else if (this.titleCursor === 5) {
-            // PAD SIZE
-            if (left) this.padSize = Math.max(50, this.padSize - 10);
-            if (right) this.padSize = Math.min(150, this.padSize + 10);
-            if (left || right) this.updatePadLayout();
+            // PAD POS (Drag Only)
+            const handles = document.querySelectorAll('.drag-handle');
+            handles.forEach(h => h.classList.add('visible'));
+        } else if (this.titleCursor === 6) {
+            // PAD SIZE (Reset handles if passing through)
+            document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
+
+            if (holdLeft) this.padSize = Math.max(50, this.padSize - 1);
+            if (holdRight) this.padSize = Math.min(150, this.padSize + 1);
+            if (holdLeft || holdRight) {
+                this.updatePadLayout();
+                this.saveSettings();
+            }
+        } else if (this.titleCursor === 7) {
+            // SCREEN SIZE
+            if (holdLeft) this.screenSize = Math.max(50, this.screenSize - 1);
+            if (holdRight) this.screenSize = Math.min(100, this.screenSize + 1);
+            if (holdLeft || holdRight) {
+                window.dispatchEvent(new Event('resize'));
+                this.saveSettings();
+            }
         }
 
         if (this.input.confirm && !this.input.prevConfirm) {
+            // Hide handles when leaving title (start game)
+            const handles = document.querySelectorAll('.drag-handle');
+            handles.forEach(h => h.classList.remove('visible'));
+
             if (this.titleCursor === 0) {
                 this.selectMode = 'PLAY';
                 this.lives = 3;
@@ -366,5 +425,37 @@ class Game {
         this.state = 'WAIT_CLEAR';
         this.stateTimer = 1.0;
         this.running = true;
+    }
+
+    loadSettings() {
+        try {
+            const data = localStorage.getItem('magic_crystal_settings');
+            if (data) {
+                const s = JSON.parse(data);
+                if (s.padType !== undefined) this.padType = s.padType;
+                if (s.padPosX !== undefined) this.padPosX = s.padPosX;
+                if (s.padPosY !== undefined) this.padPosY = s.padPosY;
+                if (s.padSize !== undefined) this.padSize = s.padSize;
+                if (s.screenSize !== undefined) this.screenSize = s.screenSize;
+                if (s.targetFPS !== undefined) {
+                    this.targetFPS = s.targetFPS;
+                    this.deltaTime = 1000 / this.targetFPS;
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load settings", e);
+        }
+    }
+
+    saveSettings() {
+        const s = {
+            padType: this.padType,
+            padPosX: this.padPosX,
+            padPosY: this.padPosY,
+            padSize: this.padSize,
+            screenSize: this.screenSize,
+            targetFPS: this.targetFPS
+        };
+        localStorage.setItem('magic_crystal_settings', JSON.stringify(s));
     }
 }
