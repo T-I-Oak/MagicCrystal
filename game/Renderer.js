@@ -322,8 +322,8 @@ class Renderer {
         // Draw Menu Items (Overlay)
         // Add semi-transparent box for readability
         // Move down to avoid overlapping the central Logo
-        const menuBaseY = 270;
-        const boxHeight = 280;
+        const menuBaseY = 250;
+        const boxHeight = 320;
 
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         this.ctx.fillRect(260, menuBaseY, 440, boxHeight); // Background for menu
