@@ -16,10 +16,11 @@ window.onload = async () => {
         const container = document.getElementById('game-container');
         if (!viewport || !container) return;
 
+        // Use clientWidth/Height for accurate visible area
         const vw = viewport.clientWidth;
         const vh = viewport.clientHeight;
 
-        // Base size
+        // Base resolution
         const bw = 960;
         const bh = 640;
 
@@ -29,7 +30,7 @@ window.onload = async () => {
             scale *= (game.screenSize / 100);
         }
 
-        // Apply Box Scale to container
+        // Apply scale. Using center-center logic.
         container.style.transform = `scale(${scale})`;
     };
 
