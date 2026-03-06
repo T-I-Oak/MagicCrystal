@@ -12,6 +12,11 @@ class Input {
         this.prevSmartLeft = false;
         this.prevSmartRight = false;
 
+        // Pointer tracking
+        this.pointerX = 0;
+        this.pointerY = 0;
+        this.isPointerDown = false;
+
         window.addEventListener('keydown', (e) => this.handleKey(e, true));
         window.addEventListener('keyup', (e) => this.handleKey(e, false));
     }

@@ -10,7 +10,11 @@ class Renderer {
         this.ctx.fillStyle = '#000'; this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
         if (state === 'TITLE') {
-            this.drawTitle(game);
+            this.drawTitleMain(game);
+            return;
+        }
+        if (state === 'SETTINGS') {
+            this.drawTitleSettings(game);
             return;
         }
         if (state === 'HOW_TO_PLAY') {
@@ -173,45 +177,63 @@ class Renderer {
         }
 
         // Footer (Information Area)
-        const footerY = this.ctx.canvas.height - 40;
-
-        // Frame Background
+        const footerY = this.ctx.canvas.height - 60;
         this.ctx.fillStyle = '#111';
-        this.ctx.fillRect(0, footerY, this.ctx.canvas.width, 40);
+        this.ctx.fillRect(0, footerY, this.ctx.canvas.width, 60);
 
-        // Timer/Bar Frame
+        // Earthquake / Retire Area
         const barX = 20;
-        const barY = footerY + 10;
+        const barY = footerY + 20;
         const barW = 600;
         const barH = 20;
 
+        // Earthquake Bar Frame
         this.ctx.strokeStyle = '#555';
         this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(barX, barY, barW, barH); // Frame
+        this.ctx.strokeRect(barX, barY, barW, barH);
 
-        // Earthquake Bar
+        // Earthquake Bar Fill
         if (ES > 0) {
             this.ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
             const fillW = (barW * ES) / 60;
             this.ctx.fillRect(barX, barY, fillW, barH);
         }
 
-        // Give Up Progress
+        // Retire Button (Right side of Footer)
+        const btnX = 720;
+        const btnY = footerY + 10;
+        const btnW = 220;
+        const btnH = 40;
+
+        // Button Background
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        this.ctx.beginPath();
+        this.ctx.roundRect(btnX, btnY, btnW, btnH, 8);
+        this.ctx.fill();
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        this.ctx.stroke();
+
+        // Button Progress (Long Press)
         if (game.giveUpTimer > 0) {
-            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.6)'; // Cyan
-            const fillW = (barW * game.giveUpTimer) / game.giveUpMax;
-            this.ctx.fillRect(barX, barY, fillW, barH);
+            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+            const fillW = (btnW * game.giveUpTimer) / game.giveUpMax;
+            this.ctx.beginPath();
+            this.ctx.roundRect(btnX, btnY, fillW, btnH, 8);
+            this.ctx.fill();
         }
 
-        // Retire Text
-        this.ctx.fillStyle = '#aaa';
-        this.ctx.font = '20px monospace';
-        this.ctx.textAlign = 'left';
         if (state === 'EDITOR') {
-            this.ctx.fillText("X (B): BACK", barX + barW + 20, barY + 16);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 20px monospace';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText("X (B) BACK ●", btnX + btnW / 2, btnY + 28);
         } else {
-            this.ctx.fillText("X (B) 長押し: リタイア", barX + barW + 20, barY + 16);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 20px monospace';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText("X (B) RETIRE ●", btnX + btnW / 2, btnY + 28);
         }
+        this.ctx.textAlign = 'left';
 
         // Overlays
         if (state === 'WAIT_CLEAR') {
@@ -306,7 +328,7 @@ class Renderer {
         this.ctx.drawImage(sprite, px, py);
     }
 
-    drawTitle(game) {
+    drawTitleBackground() {
         // Draw Background Image
         if (this.assets.title) {
             this.ctx.drawImage(this.assets.title, 0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -318,12 +340,16 @@ class Renderer {
             this.ctx.font = '60px monospace';
             this.ctx.fillText("MAGIC CRYSTAL", 260, 150);
         }
+    }
+
+    drawTitleMain(game) {
+        this.drawTitleBackground();
 
         // Draw Menu Items (Overlay)
         // Add semi-transparent box for readability
         // Move down to avoid overlapping the central Logo
         const menuBaseY = 250;
-        const boxHeight = 320;
+        const boxHeight = 200;
 
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         this.ctx.fillRect(260, menuBaseY, 440, boxHeight); // Background for menu
@@ -332,48 +358,140 @@ class Renderer {
 
         this.ctx.font = '30px monospace';
 
-        // 0: PLAY
+        // 0: GAME PLAY
         this.ctx.fillStyle = game.titleCursor === 0 ? '#ff0' : '#888';
-        this.ctx.fillText("GAME PLAY", 480, menuBaseY + 40);
+        this.ctx.fillText("GAME PLAY", 480, menuBaseY + 45);
 
-        // 1: EDIT
+        // 1: HOW TO PLAY
         this.ctx.fillStyle = game.titleCursor === 1 ? '#ff0' : '#888';
-        this.ctx.fillText("MAP EDITOR", 480, menuBaseY + 75);
+        this.ctx.fillText("HOW TO PLAY", 480, menuBaseY + 85);
 
-        // 2: HOW TO PLAY
+        // 2: MAP EDITOR
         this.ctx.fillStyle = game.titleCursor === 2 ? '#ff0' : '#888';
-        this.ctx.fillText("HOW TO PLAY", 480, menuBaseY + 110);
+        this.ctx.fillText("MAP EDITOR", 480, menuBaseY + 125);
 
-        // Settings (Smaller font)
-        this.ctx.font = '20px monospace';
-
-        // 3: SPEED Option
+        // 3: SETTINGS
         this.ctx.fillStyle = game.titleCursor === 3 ? '#ff0' : '#888';
-        const speedText = `SPEED: ${game.targetFPS} FPS${game.titleCursor === 3 ? ' < >' : ''}`;
-        this.ctx.fillText(speedText, 480, menuBaseY + 150);
-
-        // 4: PAD TYPE Option
-        this.ctx.fillStyle = game.titleCursor === 4 ? '#ff0' : '#888';
-        const typeStr = game.padType === 0 ? "SINGLE" : "DUAL";
-        const typeText = `PAD TYPE: ${typeStr}${game.titleCursor === 4 ? ' < >' : ''}`;
-        this.ctx.fillText(typeText, 480, menuBaseY + 180);
-
-        // 5: PAD POS
-        this.ctx.fillStyle = game.titleCursor === 5 ? '#ff0' : '#888';
-        const posText = `PAD POS: DRAG ●${game.titleCursor === 5 ? ' < >' : ''}`;
-        this.ctx.fillText(posText, 480, menuBaseY + 205);
-
-        // 6: SIZE Option
-        this.ctx.fillStyle = game.titleCursor === 6 ? '#ff0' : '#888';
-        const sizeText = `PAD SIZE: ${game.padSize}%${game.titleCursor === 6 ? ' < >' : ''}`;
-        this.ctx.fillText(sizeText, 480, menuBaseY + 230);
-
-        // 7: SCREEN SIZE Option
-        this.ctx.fillStyle = game.titleCursor === 7 ? '#ff0' : '#888';
-        const screenText = `SCREEN SIZE: ${game.screenSize}%${game.titleCursor === 7 ? ' < >' : ''}`;
-        this.ctx.fillText(screenText, 480, menuBaseY + 255);
+        this.ctx.fillText("SETTINGS", 480, menuBaseY + 165);
 
         this.ctx.textAlign = 'start'; // Reset for other draws
+    }
+
+    drawTitleSettings(game) {
+        this.drawTitleBackground();
+
+        const menuBaseY = 160;
+        const boxWidth = 600;
+        const boxHeight = 420;
+        const boxX = (this.ctx.canvas.width - boxWidth) / 2;
+
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        this.ctx.fillRect(boxX, menuBaseY, boxWidth, boxHeight);
+        this.ctx.strokeStyle = '#444';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(boxX, menuBaseY, boxWidth, boxHeight);
+
+        this.ctx.textAlign = 'center';
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = 'bold 32px monospace';
+        this.ctx.fillText("SETTINGS", this.ctx.canvas.width / 2, menuBaseY + 50);
+
+        const items = [
+            { label: "GAME SPEED", val: `${game.targetFPS} FPS`, type: 'slider', min: 30, max: 60, current: game.targetFPS },
+            { label: "PAD TYPE", val: game.padType === 0 ? "NONE" : (game.padType === 1 ? "SINGLE" : "DUAL"), type: 'switch', active: game.padType !== 0 },
+            { label: "PAD POS", val: game.padType === 0 ? "N/A" : "DRAG", type: 'info', disabled: game.padType === 0 },
+            { label: "PAD SIZE", val: game.padType === 0 ? "N/A" : `${game.padSize}%`, type: 'slider', min: 50, max: 150, current: game.padSize, disabled: game.padType === 0 },
+            { label: "SCREEN SIZE", val: `${game.tempScreenSize}%`, type: 'slider', min: 50, max: 100, current: game.tempScreenSize },
+            { label: "BACK", type: 'button' }
+        ];
+
+        const itemYStart = menuBaseY + 100;
+        const itemGap = 55;
+
+        items.forEach((item, i) => {
+            const iy = itemYStart + i * itemGap;
+            const isSelected = (game.settingsCursor === i);
+
+            // Item Content Layout
+            const contentX = boxX + 60;
+            const contentW = boxWidth - 120;
+
+            // Selection Marker (Simple dot or triangle)
+            if (isSelected) {
+                this.ctx.fillStyle = '#ff0';
+                this.ctx.beginPath();
+                this.ctx.arc(contentX - 25, iy, 4, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+
+            if (item.type !== 'button') {
+                this.ctx.textAlign = 'left';
+                this.ctx.fillStyle = (item.disabled) ? '#444' : (isSelected ? '#ff0' : '#888');
+                this.ctx.font = isSelected ? 'bold 20px monospace' : '18px monospace';
+                this.ctx.fillText(item.label, contentX, iy + 5);
+            }
+
+            this.ctx.textAlign = 'right';
+            if (item.type === 'slider') {
+                // Draw Slider Track
+                const trackW = 160;
+                const tx = boxX + boxWidth - 200;
+                this.ctx.fillStyle = '#222';
+                this.ctx.fillRect(tx, iy - 3, trackW, 6);
+
+                // Draw Fill
+                const ratio = (item.current - item.min) / (item.max - item.min);
+                this.ctx.fillStyle = isSelected ? '#ff0' : '#088';
+                this.ctx.fillRect(tx, iy - 3, trackW * ratio, 6);
+
+                // Draw Knob
+                this.ctx.fillStyle = (item.disabled) ? '#333' : (isSelected ? '#fff' : '#aaa');
+                this.ctx.beginPath();
+                this.ctx.arc(tx + trackW * ratio, iy, 14, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.strokeStyle = (item.disabled) ? '#222' : '#000';
+                this.ctx.lineWidth = 1;
+                this.ctx.stroke();
+
+                // Current Value Text
+                this.ctx.fillStyle = item.disabled ? '#444' : '#fff';
+                this.ctx.font = '16px monospace';
+                this.ctx.fillText(item.val, tx - 25, iy + 5);
+            } else if (item.type === 'switch') {
+                // Draw Toggle Switch
+                const sw = 64;
+                const sh = 28;
+                const sx = boxX + boxWidth - 104;
+                this.ctx.fillStyle = item.active ? '#088' : '#333';
+                this.ctx.beginPath();
+                this.ctx.roundRect(sx, iy - 14, sw, sh, 14);
+                this.ctx.fill();
+                this.ctx.strokeStyle = '#555';
+                this.ctx.stroke();
+
+                // Knob
+                this.ctx.fillStyle = '#fff';
+                this.ctx.beginPath();
+                const kx = item.active ? sx + sw - 14 : sx + 14;
+                this.ctx.arc(kx, iy, 12, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = '16px monospace';
+                this.ctx.fillText(item.val, sx - 25, iy + 5);
+            } else if (item.type === 'button') {
+                this.ctx.textAlign = 'center';
+                this.ctx.fillStyle = isSelected ? '#ff0' : '#fff';
+                this.ctx.font = isSelected ? 'bold 24px monospace' : '22px monospace';
+                this.ctx.fillText("BACK", boxX + boxWidth / 2, iy + 5);
+            } else {
+                this.ctx.fillStyle = '#666';
+                this.ctx.font = '18px monospace';
+                this.ctx.fillText(item.val, boxX + boxWidth - 40, iy + 5);
+            }
+        });
+
+        this.ctx.textAlign = 'start';
     }
 
     drawHowToPlay(game) {
@@ -393,15 +511,36 @@ class Renderer {
         this.ctx.beginPath(); this.ctx.moveTo(0, 60); this.ctx.lineTo(960, 60); this.ctx.stroke();
 
         // Footer (Fixed)
+        const footY = this.ctx.canvas.height - 60;
         this.ctx.fillStyle = '#111';
-        this.ctx.fillRect(0, 480, this.ctx.canvas.width, 40);
+        this.ctx.fillRect(0, footY, this.ctx.canvas.width, 60);
+
+        // Draw Button-like frame for BACK (Tap)
+        const btnX = 720;
+        const btnY = this.ctx.canvas.height - 55;
+        const btnW = 220;
+        const btnH = 45;
+
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        this.ctx.beginPath();
+        this.ctx.roundRect(btnX, btnY, btnW, btnH, 10);
+        this.ctx.fill();
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        this.ctx.stroke();
+
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = 'bold 22px monospace';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText("TAP TO BACK", btnX + btnW / 2, btnY + 32);
+
         this.ctx.fillStyle = '#888';
-        this.ctx.font = '20px monospace';
-        this.ctx.fillText("Press A / B / Enter to Return", 480, 505);
+        this.ctx.font = '18px monospace';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText("Scroll to Read More...", 40, btnY + 30);
 
         // Content Area (Clipped & Scrolled)
         this.ctx.beginPath();
-        this.ctx.rect(0, 60, this.ctx.canvas.width, 420);
+        this.ctx.rect(0, 60, this.ctx.canvas.width, this.ctx.canvas.height - 120);
         this.ctx.clip();
 
         this.ctx.translate(0, -game.howToPlayScroll + 80); // Start content a bit lower
@@ -557,29 +696,39 @@ class Renderer {
             // EDITOR mode - No tile guide here (moved to editor screen)
         }
 
-        // Footer with Progress Bar (Always visible frame)
-        const barX = 20;
-        const barY = this.ctx.canvas.height - 40;
-        const barW = 600;
-        const barH = 20;
-
-        // Frame (Always drawn)
-        this.ctx.strokeStyle = '#555';
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(barX, barY, barW, barH);
-
-        // Fill (Only when holding)
-        if (game.selectExitTimer > 0) {
-            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
-            const fillW = (barW * game.selectExitTimer) / game.giveUpMax;
-            this.ctx.fillRect(barX, barY, fillW, barH);
-        }
-
         // Instruction Text (Right of bar) - Both modes use long press
         this.ctx.fillStyle = '#aaa';
         this.ctx.font = '20px monospace';
+        this.ctx.textAlign = 'right';
+
+        // Draw Button-like frame for BACK
+        const btnX = 720;
+        const btnY = this.ctx.canvas.height - 55;
+        const btnW = 220;
+        const btnH = 45;
+
+        // Button Background
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        this.ctx.beginPath();
+        this.ctx.roundRect(btnX, btnY, btnW, btnH, 10);
+        this.ctx.fill();
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        this.ctx.stroke();
+
+        // Button Progress (Long Press)
+        if (game.selectExitTimer > 0) {
+            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+            const fillW = (btnW * game.selectExitTimer) / game.giveUpMax;
+            this.ctx.beginPath();
+            this.ctx.roundRect(btnX, btnY, fillW, btnH, 10);
+            this.ctx.fill();
+        }
+
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = 'bold 20px monospace';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText("X (B) BACK ●", btnX + btnW / 2, btnY + 32);
         this.ctx.textAlign = 'left';
-        this.ctx.fillText("X (B) 長押し: BACK", barX + barW + 20, barY + 16);
 
         const startX = 60;
         const startY = 80;

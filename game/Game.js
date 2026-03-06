@@ -32,17 +32,20 @@ class Game {
         this.stateTimer = 0;
 
         // UI State
-        this.titleCursor = 0;
+        // Title menus are split into MAIN and SETTINGS screens
+        this.titleCursor = 0;     // MAIN title menu cursor (0..3)
+        this.settingsCursor = 0;  // SETTINGS menu cursor (0..5)
         this.selectCursor = 0;
         this.selectMode = 'PLAY';
 
         // Settings
-        this.padType = 0; // 0: Single, 1: Dual
+        this.padType = 1; // 0: None, 1: Single, 2: Dual (Changed from 0:S, 1:D)
         this.padPosX = 50; // 0-100%
         this.padPosY = 25;  // 0-100% (Default 25 to avoid off-screen)
         this.padSize = 100;
         this.screenSize = 100; // 50-100% Game Screen Scale
-        this.loadSettings(); // Load saved settings
+        this.tempScreenSize = 100; // Preview
+        this.loadSettings(); // Load saved settings (will update screenSize & tempScreenSize)
         this.updatePadLayout(); // Initial Apply
 
         // toDataURL removed to avoid SecurityError with local files
@@ -73,61 +76,39 @@ class Game {
         const s = this.padSize / 100;
 
         if (this.padType === 0) {
+            // NONE: Hide everything
+            if (p1) p1.style.display = 'none';
+            if (p2) p2.style.display = 'none';
+        } else if (this.padType === 1) {
             // SINGLE
             if (p2) p2.style.display = 'none';
             if (p1) {
                 p1.style.display = 'grid';
                 p1.style.position = 'absolute';
-
-                // Position represents the CENTER of the pad
                 p1.style.left = `${this.padPosX}%`;
                 p1.style.bottom = `${this.padPosY}%`;
-
-                // Translate -50% X to align center to the left% coordinate
-                // Translate Y based on bottom (if we want bottom handle to be consistent?)
-                // Handle is in center of grid. Grid is mostly centered.
-                // Let's align center-center of pad to the coordinate.
-                // We use bottom for Y-positioning generally?
-                // If padPosY is 0 (bottom edge), handle is at bottom edge.
-                // Let's use generic Translate -50%, 50% relative to bottom-left origin?
-                // Actually: transform origin is center?
-                // transform-origin: top left (default).
-                // Let's stick to: left/bottom are coordinates of the CENTER.
                 p1.style.transform = `translate(-50%, 50%) scale(${s})`;
-                // Wait, if bottom=0%, we want bottom of pad at bottom of screen?
-                // Or Handle at bottom of screen?
-                // If Handle is center, and bottom=0, Handle is at bottom. Half pad is cut off.
-                // This gives full freedom.
             }
         } else {
             // DUAL
-            if (p2) p2.style.display = 'grid';
             if (p1) p1.style.display = 'grid';
-
-            // padPosX represents distance of CENTER from the nearest EDGE
-            // 0 = Center is at Edge. 50 = Center is at Screen Center.
-            // visualPosX is clamped to avoided crossing? User can decide overlap.
+            if (p2) p2.style.display = 'grid';
 
             const dist = this.padPosX;
             const bottom = this.padPosY;
 
             if (p1) {
                 p1.style.position = 'absolute';
-                p1.style.left = `${dist}%`; // From Left
+                p1.style.left = `${dist}%`;
                 p1.style.bottom = `${bottom}%`;
                 p1.style.transform = `translate(-50%, 50%) scale(${s})`;
             }
 
             if (p2) {
                 p2.style.position = 'absolute';
-                p2.style.right = `${dist}%`; // From Right
+                p2.style.right = `${dist}%`;
                 p2.style.bottom = `${bottom}%`;
                 p2.style.transform = `translate(50%, 50%) scale(${s})`;
-                // Note: right: X%. translate 50% moves it Right (away from center).
-                // If dist=0 (Right Edge), right=0. translate 50% moves Center to Right Edge?
-                // No. right:0 aligns Right Edge of element to Right Edge of container.
-                // translate(50%) moves it right by 50% width. Center is at Edge.
-                // Correct.
             }
         }
     }
@@ -210,14 +191,23 @@ class Game {
 
         switch (this.state) {
             case 'TITLE': this.updateTitle(); break;
+            case 'SETTINGS': this.updateSettings(); break;
             case 'HOW_TO_PLAY': this.updateHowToPlay(); break;
             case 'SELECT': this.updateSelect(); break;
             case 'WAIT_START': break; // Wait for timer (handled in update top)
             case 'PLAY': this.updatePlay(); break;
             case 'EDITOR':
-                // Use giveUp (x key or Numpad3) for exit
-                if (this.input.giveUp && !this.input.prevGiveUp) { this.state = 'SELECT'; }
-                else { this.editor.update(this.input); }
+                // Use giveUp (x key or Numpad3) for long-press back to SELECT
+                if (this.input.giveUp) {
+                    this.giveUpTimer++;
+                    if (this.giveUpTimer >= this.giveUpMax) {
+                        this.state = 'SELECT';
+                        this.giveUpTimer = 0;
+                    }
+                } else {
+                    this.giveUpTimer = 0;
+                    this.editor.update(this.input);
+                }
                 break;
             case 'GAMEOVER': if (this.input.confirm && !this.input.prevConfirm) this.state = 'TITLE'; break;
             case 'ALLCLEAR': if (this.input.confirm && !this.input.prevConfirm) this.state = 'TITLE'; break;
@@ -242,13 +232,40 @@ class Game {
         const up = (this.input.keys.ArrowUp || this.input.keys.w || this.input.keys['8']) && !this.input.prevUp;
         const down = (this.input.keys.ArrowDown || this.input.keys.s || this.input.keys['2']) && !this.input.prevDown;
 
-        if (down) this.titleCursor = (this.titleCursor + 1) % 8;
-        if (up) this.titleCursor = (this.titleCursor + 7) % 8; // +7 is -1
+        if (down) this.titleCursor = (this.titleCursor + 1) % 4;
+        if (up) this.titleCursor = (this.titleCursor + 3) % 4; // -1
 
-        // Update Drag Handle Visibility
-        const handles = document.querySelectorAll('.drag-handle');
-        const showHandle = (this.titleCursor === 5);
-        handles.forEach(h => {
+        // Title MAIN: never show drag handles
+        document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
+
+        if (this.input.confirm && !this.input.prevConfirm) {
+            if (this.titleCursor === 0) {
+                this.selectMode = 'PLAY';
+                this.lives = 3;
+                this.clearedStages = new Array(50).fill(false); // Reset Progress
+                this.state = 'SELECT';
+            } else if (this.titleCursor === 1) {
+                this.howToPlayScroll = 0;
+                this.state = 'HOW_TO_PLAY';
+            } else if (this.titleCursor === 2) {
+                this.selectMode = 'EDIT';
+                this.state = 'SELECT';
+            } else if (this.titleCursor === 3) {
+                this.state = 'SETTINGS';
+            }
+        }
+    }
+
+    updateSettings() {
+        const up = (this.input.keys.ArrowUp || this.input.keys.w || this.input.keys['8']) && !this.input.prevUp;
+        const down = (this.input.keys.ArrowDown || this.input.keys.s || this.input.keys['2']) && !this.input.prevDown;
+
+        if (down) this.settingsCursor = (this.settingsCursor + 1) % 6;
+        if (up) this.settingsCursor = (this.settingsCursor + 5) % 6; // -1
+
+        // Drag Handle Visibility only for PAD POS
+        const showHandle = (this.settingsCursor === 2);
+        document.querySelectorAll('.drag-handle').forEach(h => {
             if (showHandle) h.classList.add('visible');
             else h.classList.remove('visible');
         });
@@ -261,7 +278,7 @@ class Game {
         const holdLeft = (this.input.keys.ArrowLeft || this.input.keys.a || this.input.keys['4']);
         const holdRight = (this.input.keys.ArrowRight || this.input.keys.d || this.input.keys['6']);
 
-        if (this.titleCursor === 3) {
+        if (this.settingsCursor === 0) {
             // SPEED
             if (left) {
                 this.targetFPS = Math.max(10, this.targetFPS - 5);
@@ -273,74 +290,67 @@ class Game {
                 this.deltaTime = 1000 / this.targetFPS;
                 this.saveSettings();
             }
-        } else if (this.titleCursor === 4) {
-            // PAD TYPE
-            if (left || right) {
-                if (this.padType === 0) {
-                    // Switch to DUAL: If currently centered (50%), move to edge (15%)
-                    this.padType = 1;
-                    if (this.padPosX === 50) this.padPosX = 15;
-                } else {
-                    // Switch to SINGLE: If currently at edge (15%), move to center (50%)
-                    this.padType = 0;
-                    if (this.padPosX === 15) this.padPosX = 50;
-                }
+        } else if (this.settingsCursor === 1) {
+            // PAD TYPE (0: None, 1: Single, 2: Dual)
+            if (left) {
+                this.padType = (this.padType + 2) % 3;
                 this.updatePadLayout();
                 this.saveSettings();
             }
-        } else if (this.titleCursor === 5) {
+            if (right) {
+                this.padType = (this.padType + 1) % 3;
+                this.updatePadLayout();
+                this.saveSettings();
+            }
+        } else if (this.settingsCursor === 2) {
             // PAD POS (Drag Only)
-            const handles = document.querySelectorAll('.drag-handle');
-            handles.forEach(h => h.classList.add('visible'));
-        } else if (this.titleCursor === 6) {
-            // PAD SIZE (Reset handles if passing through)
-            document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
-
+            // Drag behavior is handled in main.js (mousedown/touchstart on .drag-handle)
+        } else if (this.settingsCursor === 3) {
+            // PAD SIZE
             if (holdLeft) this.padSize = Math.max(50, this.padSize - 1);
             if (holdRight) this.padSize = Math.min(150, this.padSize + 1);
             if (holdLeft || holdRight) {
                 this.updatePadLayout();
                 this.saveSettings();
             }
-        } else if (this.titleCursor === 7) {
+        } else if (this.settingsCursor === 4) {
             // SCREEN SIZE
-            if (holdLeft) this.screenSize = Math.max(50, this.screenSize - 1);
-            if (holdRight) this.screenSize = Math.min(100, this.screenSize + 1);
-            if (holdLeft || holdRight) {
+            if (holdLeft) this.tempScreenSize = Math.max(50, this.tempScreenSize - 1);
+            if (holdRight) this.tempScreenSize = Math.min(100, this.tempScreenSize + 1);
+            if (!this.input.isPointerDown && !this.input.keys.ArrowLeft && !this.input.keys.ArrowRight && !this.input.keys.a && !this.input.keys.d && this.screenSize !== this.tempScreenSize) {
+                // Apply on release (Keyboard or PointerUp)
+                this.screenSize = this.tempScreenSize;
                 window.dispatchEvent(new Event('resize'));
                 this.saveSettings();
             }
         }
 
         if (this.input.confirm && !this.input.prevConfirm) {
-            // Hide handles when leaving title (start game)
-            const handles = document.querySelectorAll('.drag-handle');
-            handles.forEach(h => h.classList.remove('visible'));
-
-            if (this.titleCursor === 0) {
-                this.selectMode = 'PLAY';
-                this.lives = 3;
-                this.clearedStages = new Array(50).fill(false); // Reset Progress
-                this.state = 'SELECT';
-            } else if (this.titleCursor === 1) {
-                this.selectMode = 'EDIT';
-                this.state = 'SELECT';
-            } else if (this.titleCursor === 2) {
-                this.howToPlayScroll = 0;
-                this.state = 'HOW_TO_PLAY';
+            // BACK
+            if (this.settingsCursor === 5) {
+                document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
+                this.state = 'TITLE';
             }
+        }
+
+        // Also allow B (giveUp) as quick back
+        if (this.input.giveUp && !this.input.prevGiveUp) {
+            document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
+            this.state = 'TITLE';
         }
     }
 
     updateHowToPlay() {
+        // Exit to Title (Tap/Confirm)
         if (this.input.confirm && !this.input.prevConfirm) {
             this.state = 'TITLE';
         }
+        // Also B (giveUp) to back
         if (this.input.giveUp && !this.input.prevGiveUp) {
             this.state = 'TITLE';
         }
 
-        // Scrolling
+        // Scrolling (Keyboard)
         const speed = 15;
         if (this.input.keys.ArrowDown || this.input.keys.s || this.input.keys['2']) {
             this.howToPlayScroll += speed;
@@ -349,10 +359,8 @@ class Game {
             this.howToPlayScroll -= speed;
         }
 
-        // Clamp (Max scroll will create gaps at bottom to ensure reading, dynamic based on content is hard so we guess)
-        // Content height extended to ~1700px. Viewport is 420px.
-        // Max scroll: 1700 - 400 = 1300. Set to 1400 for safety.
-        this.howToPlayScroll = Math.max(0, Math.min(this.howToPlayScroll, 1400));
+        // Max scroll content: Content height is big.
+        this.howToPlayScroll = Math.max(0, Math.min(this.howToPlayScroll, 1600));
     }
 
     updateSelect() {
@@ -392,11 +400,50 @@ class Game {
     }
 
     updatePlay() {
+        if (this.input.isPointerDown) {
+            // Grid-based movement: compare pointer tile with player tile
+            // Each tile is 40px (which is 4 internal units). Header is 80px.
+            const pointerGridX = Math.floor(this.input.pointerX / 40);
+            const pointerGridY = Math.floor((this.input.pointerY - 80) / 40);
+            const playerGridX = Math.floor(this.player.x / 4);
+            const playerGridY = Math.floor(this.player.y / 4);
+
+            const dgX = pointerGridX - playerGridX;
+            const dgY = pointerGridY - playerGridY;
+
+            let ps = 0; // Pointer Stick
+
+            if (dgY < 0) {
+                // Taping UP grid: Jump
+                if (dgX < 0) ps = 7;      // Up-Left
+                else if (dgX > 0) ps = 9; // Up-Right
+                else ps = 8;               // Straight Up
+            } else if (dgY > 0) {
+                // Taping DOWN grid (or same Y but diag)
+                if (dgX < 0) ps = 4;      // Just use Left for Down-Left
+                else if (dgX > 0) ps = 6; // Just use Right for Down-Right
+                else ps = 2;               // Straight Down (Dig)
+            } else {
+                // Same vertical grid
+                if (dgX < 0) ps = 4;
+                else if (dgX > 0) ps = 6;
+                else ps = 0; // Center: Neutral
+            }
+
+            if (ps !== 0) {
+                this.input.stick = ps;
+                // Jump if upward direction
+                if (ps === 7 || ps === 8 || ps === 9) this.input.jump = true;
+            } else {
+                this.input.stick = 0;
+            }
+        }
+
         this.physics.update(this.player, this.level, this.input, this);
         if (this.ES > 0) this.ES--;
         if (this.ES === 1) this.level.applyEarthquake();
 
-        // Long Press Give Up
+        // Long Press Give Up (Retire)
         if (this.input.giveUp) {
             this.giveUpTimer++;
             if (this.giveUpTimer >= this.giveUpMax) {
@@ -443,10 +490,13 @@ class Game {
                 if (s.padType !== undefined) this.padType = s.padType;
                 if (s.padPosX !== undefined) this.padPosX = s.padPosX;
                 if (s.padPosY !== undefined) this.padPosY = s.padPosY;
-                if (s.padSize !== undefined) this.padSize = s.padSize;
-                if (s.screenSize !== undefined) this.screenSize = s.screenSize;
+                if (s.padSize !== undefined) this.padSize = Number(s.padSize) || 100;
+                if (s.screenSize !== undefined) {
+                    this.screenSize = Number(s.screenSize) || 100;
+                    this.tempScreenSize = this.screenSize;
+                }
                 if (s.targetFPS !== undefined) {
-                    this.targetFPS = s.targetFPS;
+                    this.targetFPS = Number(s.targetFPS) || 45;
                     this.deltaTime = 1000 / this.targetFPS;
                 }
             }

@@ -174,6 +174,17 @@ class Physics {
         // Standard Inputs
         // Jump: 8 (Up), 7 (UpLeft), 9 (UpRight)
         if (input.stick === 8 || input.stick === 7 || input.stick === 9) {
+            // Auto-turn for diagonal jumps if facing wrong way
+            let dx = 0;
+            if (input.stick === 7) dx = -1;
+            else if (input.stick === 9) dx = 1;
+
+            if (dx !== 0 && ((dx === 1 && !player.faceRight) || (dx === -1 && player.faceRight))) {
+                player.faceRight = (dx === 1);
+                player.turnWait = 3;
+                player.sx = 0;
+                return;
+            }
             player.jumpState = 9; return;
         }
 
