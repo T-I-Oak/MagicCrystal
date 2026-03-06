@@ -375,6 +375,28 @@ class Renderer {
         this.ctx.fillText("SETTINGS", 480, menuBaseY + 165);
 
         this.ctx.textAlign = 'start'; // Reset for other draws
+
+        // Version & Copyright
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = 'bold 14px monospace';
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 3;
+
+        const versionText = `v${game.version}`;
+        const copyrightText = "© T.I.OAK 2026";
+        const vy = 620;
+
+        // Draw Version (Left)
+        this.ctx.textAlign = 'left';
+        this.ctx.strokeText(versionText, 20, vy);
+        this.ctx.fillText(versionText, 20, vy);
+
+        // Draw Copyright (Center)
+        this.ctx.textAlign = 'center';
+        this.ctx.strokeText(copyrightText, 480, vy);
+        this.ctx.fillText(copyrightText, 480, vy);
+
+        this.ctx.textAlign = 'start';
     }
 
     drawTitleSettings(game) {

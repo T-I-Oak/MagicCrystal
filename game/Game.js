@@ -3,6 +3,7 @@ class Game {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.assets = assets; // Injected (Loaded)
+        this.version = '1.0.0';
 
         // HIGH RES UPDATE: 40x40 per tile
         this.tileWidth = 40;
