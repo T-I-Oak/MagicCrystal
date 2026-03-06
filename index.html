@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Magic Crystal (Split Version)</title>
     <style>
         html,
@@ -18,6 +19,9 @@
             color: #fff;
             touch-action: none;
             /* Prevent default touch actions like scroll/zoom */
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         #viewport {
@@ -26,15 +30,12 @@
             height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             overflow: hidden;
         }
 
         #game-layer {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translate(-50%, 0);
+            position: relative;
             display: flex;
             justify-content: center;
             align-items: flex-start;
@@ -83,8 +84,8 @@
             gap: 15px;
             pointer-events: auto;
             /* Re-enable pointer events for buttons */
-            transform-origin: bottom center;
-            /* Scale from bottom */
+            transform-origin: center center;
+            /* Scale from center to maintain drag alignment */
         }
 
         /* Secondary pad default hidden, controlled by JS */
@@ -219,14 +220,14 @@
     </div>
 
     <!-- Scripts (Order Matters) -->
-    <script src="game/levels.js"></script>
-    <script src="game/Assets.js"></script>
-    <script src="game/Input.js"></script>
-    <script src="game/Level.js"></script> <!-- Includes Level and LevelEditor -->
-    <script src="game/Physics.js"></script>
-    <script src="game/Renderer.js"></script>
-    <script src="game/Game.js"></script>
-    <script src="game/main.js"></script>
+    <script src="game/levels.js?v=6"></script>
+    <script src="game/Assets.js?v=6"></script>
+    <script src="game/Input.js?v=6"></script>
+    <script src="game/Level.js?v=6"></script> <!-- Includes Level and LevelEditor -->
+    <script src="game/Physics.js?v=6"></script>
+    <script src="game/Renderer.js?v=6"></script>
+    <script src="game/Game.js?v=6"></script>
+    <script src="game/main.js?v=6"></script>
 </body>
 
 </html>

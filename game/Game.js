@@ -39,7 +39,7 @@ class Game {
         // Settings
         this.padType = 0; // 0: Single, 1: Dual
         this.padPosX = 50; // 0-100%
-        this.padPosY = 15;  // 0-100% (Default 15 to avoid off-screen)
+        this.padPosY = 25;  // 0-100% (Default 25 to avoid off-screen)
         this.padSize = 100;
         this.screenSize = 100; // 50-100% Game Screen Scale
         this.loadSettings(); // Load saved settings
@@ -276,7 +276,15 @@ class Game {
         } else if (this.titleCursor === 4) {
             // PAD TYPE
             if (left || right) {
-                this.padType = (this.padType === 0) ? 1 : 0;
+                if (this.padType === 0) {
+                    // Switch to DUAL: If currently centered (50%), move to edge (15%)
+                    this.padType = 1;
+                    if (this.padPosX === 50) this.padPosX = 15;
+                } else {
+                    // Switch to SINGLE: If currently at edge (15%), move to center (50%)
+                    this.padType = 0;
+                    if (this.padPosX === 15) this.padPosX = 50;
+                }
                 this.updatePadLayout();
                 this.saveSettings();
             }
