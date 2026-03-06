@@ -398,7 +398,7 @@ class Renderer {
 
         const items = [
             { label: "GAME SPEED", val: `${game.targetFPS} FPS`, type: 'slider', min: 30, max: 60, current: game.targetFPS },
-            { label: "PAD TYPE", val: game.padType === 0 ? "NONE" : (game.padType === 1 ? "SINGLE" : "DUAL"), type: 'switch', active: game.padType !== 0 },
+            { label: "PAD TYPE", val: "", type: 'switch', active: game.padType !== 0 },
             { label: "PAD POS", val: game.padType === 0 ? "N/A" : "DRAG", type: 'info', disabled: game.padType === 0 },
             { label: "PAD SIZE", val: game.padType === 0 ? "N/A" : `${game.padSize}%`, type: 'slider', min: 50, max: 150, current: game.padSize, disabled: game.padType === 0 },
             { label: "SCREEN SIZE", val: `${game.tempScreenSize}%`, type: 'slider', min: 50, max: 100, current: game.tempScreenSize },
@@ -458,27 +458,32 @@ class Renderer {
                 this.ctx.font = '16px monospace';
                 this.ctx.fillText(item.val, tx - 25, iy + 5);
             } else if (item.type === 'switch') {
-                // Draw Toggle Switch
-                const sw = 64;
-                const sh = 28;
-                const sx = boxX + boxWidth - 104;
-                this.ctx.fillStyle = item.active ? '#088' : '#333';
-                this.ctx.beginPath();
-                this.ctx.roundRect(sx, iy - 14, sw, sh, 14);
-                this.ctx.fill();
-                this.ctx.strokeStyle = '#555';
-                this.ctx.stroke();
+                // Segmented Control (3-way selector)
+                const sw = 240;
+                const tx = boxX + boxWidth - 280;
+                const segmentW = sw / 3;
+                const labels = ["NONE", "SINGLE", "DUAL"];
 
-                // Knob
-                this.ctx.fillStyle = '#fff';
-                this.ctx.beginPath();
-                const kx = item.active ? sx + sw - 14 : sx + 14;
-                this.ctx.arc(kx, iy, 12, 0, Math.PI * 2);
-                this.ctx.fill();
+                labels.forEach((label, j) => {
+                    const sx = tx + j * segmentW;
+                    const isCurrent = (game.padType === j);
 
-                this.ctx.fillStyle = '#fff';
-                this.ctx.font = '16px monospace';
-                this.ctx.fillText(item.val, sx - 25, iy + 5);
+                    // Segment Background
+                    this.ctx.fillStyle = isCurrent ? '#088' : '#111';
+                    if (isCurrent && isSelected) this.ctx.fillStyle = '#0aa';
+                    this.ctx.fillRect(sx, iy - 15, segmentW, 30);
+
+                    // Segment Border
+                    this.ctx.strokeStyle = isSelected ? '#ff0' : '#444';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.strokeRect(sx, iy - 15, segmentW, 30);
+
+                    // Label
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillStyle = isCurrent ? '#fff' : '#666';
+                    this.ctx.font = 'bold 12px monospace';
+                    this.ctx.fillText(label, sx + segmentW / 2, iy + 5);
+                });
             } else if (item.type === 'button') {
                 this.ctx.textAlign = 'center';
                 this.ctx.fillStyle = isSelected ? '#ff0' : '#fff';

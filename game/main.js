@@ -208,12 +208,20 @@ window.onload = async () => {
                 game.input.isPointerDown = true;
                 updateSliderValue(index, x);
             } else if (index === 1) {
-                // Switch Interaction (Cycle 3 options)
-                game.padType = (game.padType + 1) % 3;
-                if (game.padType === 1 && game.padPosX === 15) game.padPosX = 50;
-                if (game.padType === 2 && game.padPosX === 50) game.padPosX = 15;
-                game.updatePadLayout();
-                game.saveSettings();
+                // Segmented Control Interaction
+                const sw = 240;
+                const tx = boxX + boxWidth - 280;
+                if (x >= tx && x <= tx + sw) {
+                    const segmentIndex = Math.floor((x - tx) / (sw / 3));
+                    game.padType = segmentIndex;
+
+                    // Smart auto-positioning
+                    if (game.padType === 1 && game.padPosX === 15) game.padPosX = 50;
+                    if (game.padType === 2 && game.padPosX === 50) game.padPosX = 15;
+
+                    game.updatePadLayout();
+                    game.saveSettings();
+                }
             } else if (index === 5) {
                 // BACK
                 game.input.setVirtualKey('Enter', true);
