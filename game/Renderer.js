@@ -378,7 +378,7 @@ class Renderer {
 
         // Version & Copyright
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = 'bold 14px monospace';
+        this.ctx.font = 'bold 16px sans-serif';
         this.ctx.strokeStyle = '#000';
         this.ctx.lineWidth = 3;
 
