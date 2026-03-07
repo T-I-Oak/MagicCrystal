@@ -3,7 +3,7 @@ class Game {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.assets = assets; // Injected (Loaded)
-        this.version = '1.0.13';
+        this.version = '1.0.14';
 
         // HIGH RES UPDATE: 40x40 per tile
         this.tileWidth = 40;
@@ -261,8 +261,19 @@ class Game {
         const up = (this.input.keys.ArrowUp || this.input.keys.w || this.input.keys['8']) && !this.input.prevUp;
         const down = (this.input.keys.ArrowDown || this.input.keys.s || this.input.keys['2']) && !this.input.prevDown;
 
-        if (down) this.settingsCursor = (this.settingsCursor + 1) % 6;
-        if (up) this.settingsCursor = (this.settingsCursor + 5) % 6; // -1
+        if (down) {
+            this.settingsCursor = (this.settingsCursor + 1) % 6;
+            if (this.padType === 0 && (this.settingsCursor === 2 || this.settingsCursor === 3)) {
+                // Guard: Ignore PAD POS/SIZE if padType is NONE
+                this.settingsCursor = 4; // Skip to SCREEN SIZE
+            }
+        }
+        if (up) {
+            this.settingsCursor = (this.settingsCursor + 5) % 6; // -1
+            if (this.padType === 0 && (this.settingsCursor === 2 || this.settingsCursor === 3)) {
+                this.settingsCursor = 1; // Skip back to PAD TYPE
+            }
+        }
 
         // Drag Handle Visibility only for PAD POS
         const showHandle = (this.settingsCursor === 2);

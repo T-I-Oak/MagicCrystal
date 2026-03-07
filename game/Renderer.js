@@ -421,8 +421,8 @@ class Renderer {
         const items = [
             { label: "GAME SPEED", val: `${game.targetFPS} FPS`, type: 'slider', min: 30, max: 60, current: game.targetFPS },
             { label: "PAD TYPE", val: "", type: 'switch', active: game.padType !== 0 },
-            { label: "PAD POS", val: game.padType === 0 ? "N/A" : "DRAG", type: 'info', disabled: game.padType === 0 },
-            { label: "PAD SIZE", val: game.padType === 0 ? "N/A" : `${game.padSize}%`, type: 'slider', min: 50, max: 150, current: game.padSize, disabled: game.padType === 0 },
+            { label: "PAD POS", val: game.padType === 0 ? "" : "DRAG", type: 'info', disabled: game.padType === 0 },
+            { label: "PAD SIZE", val: game.padType === 0 ? "" : `${game.padSize}%`, type: 'slider', min: 50, max: 150, current: game.padSize, disabled: game.padType === 0 },
             { label: "SCREEN SIZE", val: `${game.tempScreenSize}%`, type: 'slider', min: 50, max: 100, current: game.tempScreenSize },
             { label: "BACK", type: 'button' }
         ];
