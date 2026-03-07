@@ -21,6 +21,28 @@ class Physics {
 
         if (typeof player.sy === 'undefined') player.sy = 0;
 
+        if (player.jumpState === 0) {
+            // === WALK (JS=0) ===
+            // If moving horizontally (subX != 0), continue horizontal movement
+            if (subX !== 0) {
+                player.sy = 0;
+            }
+            // If moving vertically (falling, subY != 0), continue vertical fall
+            else if (subY !== 0) {
+                player.sx = 0; player.sy = 1; // Enforce vertical drop
+            } else {
+                // Aligned: Check Below
+                const tileBelow = level.getTile(gridX, gridY + 1);
+                if (this.isSolid(tileBelow)) {
+                    player.sx = 0; player.sy = 0;
+                    this.processInput(player, level, input, game);
+                } else {
+                    // Start Fall (Stay in JS=0)
+                    player.sx = 0; player.sy = 1;
+                }
+            }
+        }
+
         if (player.jumpState > 0) {
             // === JUMP/FALL ===
             if (isAligned) {
@@ -45,50 +67,18 @@ class Physics {
 
                 player.sx = sx; player.sy = sy;
             }
-
             if (player.jumpState > 1) player.jumpState--;
+        }
 
-            const nextX = player.x + player.sx;
-            const nextY = player.y + player.sy;
-            const isNextAligned = (nextX % 4 === 0 && nextY % 4 === 0);
+        player.x += player.sx;
+        player.y += player.sy;
 
-            if (isNextAligned) {
-                const nextGridX = nextX / 4;
-                const nextGridY = nextY / 4;
-                const tileBelowDest = level.getTile(nextGridX, nextGridY + 1);
-                if (this.isSolid(tileBelowDest)) {
-                    player.jumpState = 0; // Land
-                }
-            }
-
-            player.x += player.sx;
-            player.y += player.sy;
-        } else {
-            // === WALK (JS=0) ===
-            // If moving horizontally (subX != 0), continue horizontal movement
-            if (subX !== 0) {
-                player.sy = 0;
-                player.x += player.sx;
-            }
-            // If moving vertically (falling, subY != 0), continue vertical fall
-            else if (subY !== 0) {
-                player.sx = 0; player.sy = 1; // Enforce vertical drop
-                player.x += player.sx;
-                player.y += player.sy;
-            } else {
-                // Aligned: Check Below
-                const tileBelow = level.getTile(gridX, gridY + 1);
-                if (this.isSolid(tileBelow)) {
-                    player.sx = 0; player.sy = 0;
-                    this.processInput(player, level, input, game);
-                    player.x += player.sx;
-                    player.y += player.sy;
-                } else {
-                    // Start Fall (Stay in JS=0)
-                    player.sx = 0; player.sy = 1;
-                    player.x += player.sx;
-                    player.y += player.sy;
-                }
+        // Correct for landing immediately if now aligned after move
+        if (player.jumpState > 0 && player.x % 4 === 0 && player.y % 4 === 0) {
+            const nextGridX = player.x / 4;
+            const nextGridY = player.y / 4;
+            if (this.isSolid(level.getTile(nextGridX, nextGridY + 1))) {
+                player.jumpState = 0;
             }
         }
 
@@ -157,18 +147,18 @@ class Physics {
         if (input.smartLeft) {
             if (player.faceRight) {
                 player.faceRight = false;
-                return;
             } else {
-                player.jumpState = 9; return;
+                player.jumpState = 9;
             }
+            return;
         }
         if (input.smartRight) {
             if (!player.faceRight) {
                 player.faceRight = true;
-                return;
             } else {
-                player.jumpState = 9; return;
+                player.jumpState = 9;
             }
+            return;
         }
 
         // Standard Inputs

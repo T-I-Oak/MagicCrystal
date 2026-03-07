@@ -3,7 +3,7 @@ class Game {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.assets = assets; // Injected (Loaded)
-        this.version = '1.0.14';
+        this.version = "1.0.22";
 
         // HIGH RES UPDATE: 40x40 per tile
         this.tileWidth = 40;
@@ -12,7 +12,7 @@ class Game {
         this.rows = 13;
 
         this.canvas.width = this.cols * this.tileWidth;
-        this.canvas.height = this.rows * this.tileHeight + 120; // 80px Header + 40px Footer
+        this.canvas.height = this.rows * this.tileHeight + 140; // 80px Header + 60px Footer
 
         this.input = new Input();
         this.level = new Level(this.cols, this.rows);

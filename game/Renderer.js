@@ -384,7 +384,7 @@ class Renderer {
 
         const versionText = `v${game.version}`;
         const copyrightText = "© T.I.OAK 2026";
-        const vy = 620;
+        const vy = this.ctx.canvas.height - 15;
 
         // Draw Version (Left)
         this.ctx.textAlign = 'left';

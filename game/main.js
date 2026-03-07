@@ -24,7 +24,7 @@ window.onload = async () => {
 
         // Base resolution including border (4px * 2) + 2px safety margin
         const bw = 970;
-        const bh = 650;
+        const bh = 670; // Updated from 650 for 660px canvas
 
         // Scale to fit while maintaining aspect ratio
         let scale = Math.min(vw / bw, vh / bh);
@@ -151,14 +151,14 @@ window.onload = async () => {
 
         // SELECT stage menu - BACK button area (Bottom-right)
         if (game.state === 'SELECT') {
-            if (x > 720 && x < 940 && y > 580) {
+            if (x > 720 && x < 940 && y > canvas.height - 60) {
                 game.input.setVirtualKey('x', true);
                 return;
             }
         }
         // HOW_TO_PLAY back button
         if (game.state === 'HOW_TO_PLAY') {
-            if (x > 720 && x < 940 && y > 580) {
+            if (x > 720 && x < 940 && y > canvas.height - 60) {
                 // Return via virtual confirm
                 game.input.setVirtualKey('Enter', true);
                 return;
@@ -166,7 +166,7 @@ window.onload = async () => {
         }
         // PLAY / EDITOR state
         if (game.state === 'PLAY' || game.state === 'EDITOR') {
-            if (x > 720 && x < 940 && y > 580) {
+            if (x > 720 && x < 940 && y > canvas.height - 60) {
                 // BACK / RETIRE
                 game.input.setVirtualKey('x', true);
             } else if (game.state === 'EDITOR' && y < 80) {
