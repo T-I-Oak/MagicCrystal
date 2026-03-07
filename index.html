@@ -42,24 +42,6 @@
             box-sizing: border-box;
         }
 
-        #debug-panel {
-            position: fixed;
-            top: env(safe-area-inset-top, 10px);
-            right: calc(10px + env(safe-area-inset-right, 0px));
-            /* Shifted to right side */
-            background: rgba(0, 0, 0, 0.85);
-            color: #0f0;
-            padding: 12px;
-            font-family: monospace;
-            font-size: 11px;
-            z-index: 10000;
-            pointer-events: none;
-            border: 1px solid #0f0;
-            border-radius: 4px;
-            display: block;
-            line-height: 1.4;
-            max-width: 250px;
-        }
 
         #game-layer {
             position: relative;
@@ -203,7 +185,6 @@
 
 <body>
     <div id="viewport">
-        <div id="debug-panel">Initializing debug...</div>
         <div id="game-layer">
             <div id="game-container">
                 <canvas id="game-canvas" width="960" height="640"></canvas>
@@ -251,14 +232,14 @@
     </div>
 
     <!-- Scripts (Order Matters) -->
-    <script src="game/levels.js?v=1.0.11"></script>
-    <script src="game/Assets.js?v=1.0.11"></script>
-    <script src="game/Input.js?v=1.0.11"></script>
-    <script src="game/Level.js?v=1.0.11"></script> <!-- Includes Level and LevelEditor -->
-    <script src="game/Physics.js?v=1.0.11"></script>
-    <script src="game/Renderer.js?v=1.0.11"></script>
-    <script src="game/Game.js?v=1.0.11"></script>
-    <script src="game/main.js?v=1.0.11"></script>
+    <script src="game/levels.js?v=1.0.12"></script>
+    <script src="game/Assets.js?v=1.0.12"></script>
+    <script src="game/Input.js?v=1.0.12"></script>
+    <script src="game/Level.js?v=1.0.12"></script> <!-- Includes Level and LevelEditor -->
+    <script src="game/Physics.js?v=1.0.12"></script>
+    <script src="game/Renderer.js?v=1.0.12"></script>
+    <script src="game/Game.js?v=1.0.12"></script>
+    <script src="game/main.js?v=1.0.12"></script>
 </body>
 
 </html>

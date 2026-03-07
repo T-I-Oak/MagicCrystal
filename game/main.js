@@ -15,7 +15,6 @@ window.onload = async () => {
         const viewport = document.getElementById('viewport');
         const layer = document.getElementById('game-layer');
         const container = document.getElementById('game-container');
-        const debug = document.getElementById('debug-panel');
         if (!viewport || !container) return;
 
         // Use VisualViewport for accurate visible area on Safari
