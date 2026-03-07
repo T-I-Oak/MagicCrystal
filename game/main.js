@@ -14,10 +14,10 @@ window.onload = async () => {
     const scaleGame = () => {
         const viewport = document.getElementById('viewport');
         const container = document.getElementById('game-container');
+        const debug = document.getElementById('debug-panel');
         if (!viewport || !container) return;
 
         // Use VisualViewport for accurate visible area on Safari (excludes UI like tabs)
-        // Fallback to window.innerWidth/Height
         const vv = window.visualViewport;
         const vw = vv ? vv.width : window.innerWidth;
         const vh = vv ? vv.height : window.innerHeight;
@@ -33,7 +33,23 @@ window.onload = async () => {
             scale *= (game.screenSize / 100);
         }
 
-        container.style.transform = `scale(${scale})`;
+        // Apply absolute centering with translate
+        container.style.transform = `translate(-50%, 0) scale(${scale})`;
+
+        // Update Debug Panel
+        if (debug) {
+            const rect = container.getBoundingClientRect();
+            const safeTop = getComputedStyle(viewport).paddingTop || "0px";
+            debug.innerHTML = `
+                v: ${game ? game.version : '?'}<br>
+                Viewport: ${Math.round(vw)}x${Math.round(vh)}<br>
+                SafeTop: ${safeTop}<br>
+                Game Rect Left: ${Math.round(rect.left)}px<br>
+                Game Rect Top: ${Math.round(rect.top)}px<br>
+                Game Width: ${Math.round(rect.width)}px<br>
+                Scale: ${scale.toFixed(3)}
+            `;
+        }
     };
 
     window.addEventListener('resize', scaleGame);
