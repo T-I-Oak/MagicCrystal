@@ -22,9 +22,9 @@ window.onload = async () => {
         const vw = vv ? vv.width : window.innerWidth;
         const vh = vv ? vv.height : window.innerHeight;
 
-        // Base resolution including border (4px * 2)
-        const bw = 968;
-        const bh = 648;
+        // Base resolution including border (4px * 2) + 2px safety margin
+        const bw = 970;
+        const bh = 650;
 
         // Scale to fit while maintaining aspect ratio
         let scale = Math.min(vw / bw, vh / bh);

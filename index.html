@@ -30,16 +30,16 @@
 
         #viewport {
             position: relative;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             height: -webkit-fill-available;
             height: 100dvh;
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            /* Maintain top alignment */
+            /* Stick to top */
             overflow: hidden;
-            /* Only top padding for safe area, horizontal must be symmetric for centering */
+            /* Force reset horizontal padding for perfect centering */
             padding: env(safe-area-inset-top) 0 0 0;
             box-sizing: border-box;
         }
@@ -228,14 +228,14 @@
     </div>
 
     <!-- Scripts (Order Matters) -->
-    <script src="game/levels.js?v=1.0.4"></script>
-    <script src="game/Assets.js?v=1.0.4"></script>
-    <script src="game/Input.js?v=1.0.4"></script>
-    <script src="game/Level.js?v=1.0.4"></script> <!-- Includes Level and LevelEditor -->
-    <script src="game/Physics.js?v=1.0.4"></script>
-    <script src="game/Renderer.js?v=1.0.4"></script>
-    <script src="game/Game.js?v=1.0.4"></script>
-    <script src="game/main.js?v=1.0.4"></script>
+    <script src="game/levels.js?v=1.0.5"></script>
+    <script src="game/Assets.js?v=1.0.5"></script>
+    <script src="game/Input.js?v=1.0.5"></script>
+    <script src="game/Level.js?v=1.0.5"></script> <!-- Includes Level and LevelEditor -->
+    <script src="game/Physics.js?v=1.0.5"></script>
+    <script src="game/Renderer.js?v=1.0.5"></script>
+    <script src="game/Game.js?v=1.0.5"></script>
+    <script src="game/main.js?v=1.0.5"></script>
 </body>
 
 </html>
