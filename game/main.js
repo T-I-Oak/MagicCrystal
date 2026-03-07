@@ -58,7 +58,7 @@ window.onload = async () => {
                 V-RectL: ${Math.round(vRect.left)}px<br>
                 L-RectL: ${Math.round(lRect.left)}px<br>
                 G-RectL: ${Math.round(cRect.left)}px<br>
-                G-CalcL: ${Math.round(left)}px<br>
+                G-CalcL: ${Math.round(finalLeft)}px<br>
                 Scale: ${scale.toFixed(3)}
             `;
         }
