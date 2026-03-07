@@ -46,22 +46,6 @@ window.onload = async () => {
         container.style.left = `${finalLeft}px`;
         container.style.transform = `scale(${scale})`;
 
-        // Update Debug Panel
-        if (debug) {
-            const vRect = viewport.getBoundingClientRect();
-            const lRect = layer.getBoundingClientRect();
-            const cRect = container.getBoundingClientRect();
-            debug.innerHTML = `
-                v: ${game ? game.version : '?'}<br>
-                VV: ${Math.round(vw)}x${Math.round(vh)} (OffL: ${Math.round(offsetLeft)})<br>
-                WinInner: ${window.innerWidth}x${window.innerHeight}<br>
-                V-RectL: ${Math.round(vRect.left)}px<br>
-                L-RectL: ${Math.round(lRect.left)}px<br>
-                G-RectL: ${Math.round(cRect.left)}px<br>
-                G-CalcL: ${Math.round(finalLeft)}px<br>
-                Scale: ${scale.toFixed(3)}
-            `;
-        }
     };
 
     window.addEventListener('resize', scaleGame);
