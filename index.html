@@ -71,9 +71,11 @@
 
         #game-container {
             position: absolute;
-            left: 50%;
+            left: 0;
+            /* Will be set by JS precisely */
             top: env(safe-area-inset-top);
-            transform-origin: top center;
+            transform-origin: top left;
+            /* Changed from top center for 1:1 coordinate control */
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             background-color: #000;
             border: 4px solid #4e4e6a;
@@ -249,14 +251,14 @@
     </div>
 
     <!-- Scripts (Order Matters) -->
-    <script src="game/levels.js?v=1.0.6"></script>
-    <script src="game/Assets.js?v=1.0.6"></script>
-    <script src="game/Input.js?v=1.0.6"></script>
-    <script src="game/Level.js?v=1.0.6"></script> <!-- Includes Level and LevelEditor -->
-    <script src="game/Physics.js?v=1.0.6"></script>
-    <script src="game/Renderer.js?v=1.0.6"></script>
-    <script src="game/Game.js?v=1.0.6"></script>
-    <script src="game/main.js?v=1.0.6"></script>
+    <script src="game/levels.js?v=1.0.7"></script>
+    <script src="game/Assets.js?v=1.0.7"></script>
+    <script src="game/Input.js?v=1.0.7"></script>
+    <script src="game/Level.js?v=1.0.7"></script> <!-- Includes Level and LevelEditor -->
+    <script src="game/Physics.js?v=1.0.7"></script>
+    <script src="game/Renderer.js?v=1.0.7"></script>
+    <script src="game/Game.js?v=1.0.7"></script>
+    <script src="game/main.js?v=1.0.7"></script>
 </body>
 
 </html>

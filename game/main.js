@@ -33,8 +33,13 @@ window.onload = async () => {
             scale *= (game.screenSize / 100);
         }
 
-        // Apply absolute centering with translate
-        container.style.transform = `translate(-50%, 0) scale(${scale})`;
+        // PHYSICAL CENTERING: Calculate the exact 'left' coordinate in pixels
+        // Based on physical viewport width and the scaled game width
+        const gameWidth = bw * scale;
+        const left = (vw - gameWidth) / 2;
+
+        container.style.left = `${left}px`;
+        container.style.transform = `scale(${scale})`;
 
         // Update Debug Panel
         if (debug) {
