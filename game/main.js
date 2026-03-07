@@ -35,9 +35,15 @@ window.onload = async () => {
         }
 
         const gameWidth = bw * scale;
-        const left = (vw - gameWidth) / 2;
 
-        container.style.left = `${left}px`;
+        // OFFSET COMPENSATION: 
+        // 1. Calculate ideal physical center: (vw - gameWidth) / 2
+        // 2. Subtract parent's relative offset (viewport.left) to pinpoint absolute 0 on screen
+        const logicalCenter = (vw - gameWidth) / 2;
+        const parentLeft = viewport.getBoundingClientRect().left;
+        const finalLeft = logicalCenter - parentLeft;
+
+        container.style.left = `${finalLeft}px`;
         container.style.transform = `scale(${scale})`;
 
         // Update Debug Panel
