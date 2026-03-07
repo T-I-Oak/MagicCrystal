@@ -21,7 +21,6 @@ window.onload = async () => {
         const vv = window.visualViewport;
         const vw = vv ? vv.width : window.innerWidth;
         const vh = vv ? vv.height : window.innerHeight;
-        const offsetLeft = vv ? vv.offsetLeft : 0;
 
         // Base resolution including border (4px * 2) + 2px safety margin
         const bw = 970;
@@ -388,5 +387,4 @@ window.onload = async () => {
     canvas.addEventListener('touchcancel', handleMenuPointerUp);
 
     game.start();
-    console.log("Game Started (Responsive Version)");
 };

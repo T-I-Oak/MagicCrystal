@@ -3,7 +3,7 @@ class Game {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.assets = assets; // Injected (Loaded)
-        this.version = '1.0.12';
+        this.version = '1.0.13';
 
         // HIGH RES UPDATE: 40x40 per tile
         this.tileWidth = 40;
@@ -59,7 +59,7 @@ class Game {
         this.selectExitTimer = 0; // Timer for exiting stage select
         this.howToPlayScroll = 0;
 
-        console.log("GAME INIT");
+        this.isSaved = false;
     }
 
     updatePadLayout() {
@@ -135,7 +135,7 @@ class Game {
 
     saveLevel() {
         localStorage.setItem('magic_crystal_level', this.level.serialize());
-        console.log("Level Saved");
+        this.isSaved = true;
     }
 
     loadLevel() {
@@ -143,7 +143,7 @@ class Game {
         if (data) {
             this.level.deserialize(data);
             this.resetPlayer();
-            console.log("Level Loaded");
+            this.isSaved = true;
         }
     }
 
@@ -463,11 +463,11 @@ class Game {
     handleGameOver() {
         this.lives--;
         if (this.lives > 0) {
-            console.log("MISS!");
+            this.state = 'MISS';
             this.state = 'WAIT_MISS';
             this.stateTimer = 1.0;
         } else {
-            console.log("GAME OVER!");
+            this.state = 'GAME_OVER';
             this.state = 'WAIT_GAMEOVER';
             this.stateTimer = 3.0; // 3 Seconds
         }
@@ -475,7 +475,7 @@ class Game {
     }
 
     handleLevelClear() {
-        console.log("LEVEL CLEAR");
+        this.state = 'CLEAR';
         this.clearedStages[this.stage] = true;
         if (this.lives < this.maxLives) this.lives++;
         this.state = 'WAIT_CLEAR';

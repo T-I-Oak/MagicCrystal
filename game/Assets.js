@@ -32,11 +32,6 @@ class Assets {
             // Execute all loading tasks
             const [playerSheet, tileSheet] = await Promise.all(loadImageTasks);
 
-            console.log("Assets Loaded info:",
-                "Player:", playerSheet.width, "x", playerSheet.height,
-                "Tiles:", tileSheet.width, "x", tileSheet.height
-            );
-
             // Dynamic sizing
             let pSize = 40, tSize = 40;
             // Player: 3 frames wide. Tile: 4 frames wide.
@@ -48,7 +43,6 @@ class Assets {
 
             this.createHelpers(); // Grid, Cursor etc.
             this.loaded = true;
-            console.log("Assets Loaded (Dynamic Size): P=" + pSize + " T=" + tSize);
         } catch (e) {
             console.error("Asset Load Failed", e);
             console.warn("Loading Failed. Using Procedural Fallback.");
