@@ -16,25 +16,31 @@ window.onload = async () => {
         const container = document.getElementById('game-container');
         if (!viewport || !container) return;
 
-        // Use clientWidth/Height for accurate visible area
-        const vw = viewport.clientWidth;
-        const vh = viewport.clientHeight;
+        // Use VisualViewport for accurate visible area on Safari (excludes UI like tabs)
+        // Fallback to window.innerWidth/Height
+        const vv = window.visualViewport;
+        const vw = vv ? vv.width : window.innerWidth;
+        const vh = vv ? vv.height : window.innerHeight;
 
         // Base resolution
         const bw = 960;
         const bh = 640;
 
+        // Scale to fit while maintaining aspect ratio
         let scale = Math.min(vw / bw, vh / bh);
 
         if (game && game.screenSize) {
             scale *= (game.screenSize / 100);
         }
 
-        // Apply scale. Using center-center logic.
         container.style.transform = `scale(${scale})`;
     };
 
     window.addEventListener('resize', scaleGame);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', scaleGame);
+        window.visualViewport.addEventListener('scroll', scaleGame);
+    }
     scaleGame(); // Initial Scale
 
     // Drag Handle Logic
