@@ -13,14 +13,16 @@ window.onload = async () => {
     // Basic Scaling Logic
     const scaleGame = () => {
         const viewport = document.getElementById('viewport');
+        const layer = document.getElementById('game-layer');
         const container = document.getElementById('game-container');
         const debug = document.getElementById('debug-panel');
         if (!viewport || !container) return;
 
-        // Use VisualViewport for accurate visible area on Safari (excludes UI like tabs)
+        // Use VisualViewport for accurate visible area on Safari
         const vv = window.visualViewport;
         const vw = vv ? vv.width : window.innerWidth;
         const vh = vv ? vv.height : window.innerHeight;
+        const offsetLeft = vv ? vv.offsetLeft : 0;
 
         // Base resolution including border (4px * 2) + 2px safety margin
         const bw = 970;
@@ -28,13 +30,10 @@ window.onload = async () => {
 
         // Scale to fit while maintaining aspect ratio
         let scale = Math.min(vw / bw, vh / bh);
-
         if (game && game.screenSize) {
             scale *= (game.screenSize / 100);
         }
 
-        // PHYSICAL CENTERING: Calculate the exact 'left' coordinate in pixels
-        // Based on physical viewport width and the scaled game width
         const gameWidth = bw * scale;
         const left = (vw - gameWidth) / 2;
 
@@ -43,15 +42,17 @@ window.onload = async () => {
 
         // Update Debug Panel
         if (debug) {
-            const rect = container.getBoundingClientRect();
-            const safeTop = getComputedStyle(viewport).paddingTop || "0px";
+            const vRect = viewport.getBoundingClientRect();
+            const lRect = layer.getBoundingClientRect();
+            const cRect = container.getBoundingClientRect();
             debug.innerHTML = `
                 v: ${game ? game.version : '?'}<br>
-                Viewport: ${Math.round(vw)}x${Math.round(vh)}<br>
-                SafeTop: ${safeTop}<br>
-                Game Rect Left: ${Math.round(rect.left)}px<br>
-                Game Rect Top: ${Math.round(rect.top)}px<br>
-                Game Width: ${Math.round(rect.width)}px<br>
+                VV: ${Math.round(vw)}x${Math.round(vh)} (OffL: ${Math.round(offsetLeft)})<br>
+                WinInner: ${window.innerWidth}x${window.innerHeight}<br>
+                V-RectL: ${Math.round(vRect.left)}px<br>
+                L-RectL: ${Math.round(lRect.left)}px<br>
+                G-RectL: ${Math.round(cRect.left)}px<br>
+                G-CalcL: ${Math.round(left)}px<br>
                 Scale: ${scale.toFixed(3)}
             `;
         }
