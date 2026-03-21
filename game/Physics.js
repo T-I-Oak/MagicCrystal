@@ -120,10 +120,10 @@ class Physics {
     }
 
     processInput(player, level, input, game) {
-        // 1. Down Button or B Button (Turn Around & Lock)
-        // If Down or B is held, change direction only on the first frame and block all other actions.
-        if (input.actions.down || input.actions.cancel) {
-            if (input.isJustPressed('down') || input.isJustPressed('cancel')) {
+        // 1. Down Button (Turn Around & Lock)
+        // If Down is held, change direction only on the first frame and block all other actions.
+        if (input.actions.down) {
+            if (input.isJustPressed('down')) {
                 player.faceRight = !player.faceRight;
             }
             player.sx = 0;
