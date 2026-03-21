@@ -806,7 +806,7 @@ class Renderer {
                                 if (it === 'A') style = 'circle-a';
                                 if (it === 'B') style = 'circle-b';
                             }
-                            const kw = (it.length > 3 && style === 'key') ? 80 : 40;
+                            const kw = (it.length >= 3 && style === 'key') ? 80 : 40;
                             drawIconBox(this.ctx, startX, centerY - (i === 3 ? 18 : 15), kw, (i === 3 ? 36 : 30), it, style);
                             startX += kw + 6;
                         }

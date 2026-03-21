@@ -3,7 +3,7 @@ class Game {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.assets = assets; // Injected (Loaded)
-        this.version = "1.0.26";
+        this.version = "1.0.27";
 
         // HIGH RES UPDATE: 40x40 per tile
         this.tileWidth = 40;
@@ -25,7 +25,8 @@ class Game {
         this.accumulator = 0;
 
         // --- STATE MANAGEMENT ---
-        this.state = 'TITLE';
+        this._state = 'TITLE';
+        this.lastStateChange = Date.now();
         this.lives = 3;
         this.maxLives = 9;
         this.clearedStages = new Array(50).fill(false);
@@ -49,17 +50,21 @@ class Game {
         this.loadSettings(); // Load saved settings (will update screenSize & tempScreenSize)
         this.updatePadLayout(); // Initial Apply
 
-        // toDataURL removed to avoid SecurityError with local files
         this.crystalCount = 0;
         this.ES = 0;
-
-        // Give Up Timer
         this.giveUpTimer = 0;
         this.giveUpMax = 60; // 1 sec hold
         this.selectExitTimer = 0; // Timer for exiting stage select
         this.howToPlayScroll = 0;
-
         this.isSaved = false;
+    }
+
+    get state() { return this._state; }
+    set state(val) {
+        if (this._state !== val) {
+            this._state = val;
+            this.lastStateChange = Date.now();
+        }
     }
 
     updatePadLayout() {

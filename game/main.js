@@ -321,6 +321,7 @@ window.onload = async () => {
 
     const handleMenuPointerClick = (clientX, clientY) => {
         if (!game || isMoving) return;
+        if (Date.now() - game.lastStateChange < 200) return; // Guard against ghost clicks after transition
         const { x, y } = getCanvasPointer(clientX, clientY);
 
         // TITLE main menu
