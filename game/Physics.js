@@ -129,8 +129,8 @@ class Physics {
             return;
         }
 
-        // Digging (Down)
-        if (input.stick === 2) {
+        // Digging (Down or Confirm/Space)
+        if (input.stick === 2 || input.actions.confirm) {
             const gridX = Math.floor(player.x / 4);
             const gridY = Math.floor(player.y / 4);
             const tileBelow = level.getTile(gridX, gridY + 1);

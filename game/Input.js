@@ -19,12 +19,12 @@ class Input {
 
         // Mappings
         this.mappings = {
-            up: ['ArrowUp', 'w', 'Numpad8', '8', 'Digit8'],
-            down: ['ArrowDown', 's', 'Numpad5', 'Numpad2', '2', 'Digit2', ' '],
-            left: ['ArrowLeft', 'a', 'Numpad4', '4', 'Digit4'],
-            right: ['ArrowRight', 'd', 'Numpad6', '6', 'Digit6'],
-            jump: ['z', 'Numpad1'],
-            confirm: ['z', 'Enter', ' ', 'Numpad1'],
+            up: ['ArrowUp', 'w', 'Numpad8'],
+            down: ['ArrowDown', 's', 'Numpad5', 'Numpad2'],
+            left: ['ArrowLeft', 'a', 'Numpad4'],
+            right: ['ArrowRight', 'd', 'Numpad6'],
+            'jump': ['ArrowUp', 'w', 'Numpad8'],
+            'confirm': ['z', 'Enter', 'Space', ' ', 'Numpad1'],
             cancel: ['x', 'Numpad3'],
             smartLeft: ['q', 'Numpad7'],
             smartRight: ['e', 'Numpad9']
@@ -42,22 +42,22 @@ class Input {
 
     handleKey(e, isDown) {
         // Prevent scrolling for game keys
-        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", " "].includes(e.key)) {
+        const gameKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", " "];
+        if (gameKeys.includes(e.key) || gameKeys.includes(e.code)) {
             e.preventDefault();
         }
 
-        const keysToTrack = [e.key, e.code];
-        keysToTrack.forEach(k => {
-            if (!k) return;
-            this.keys[k] = isDown;
-            if (isDown) {
-                this.bufferedKeys[k] = true;
-            }
-        });
+        this.keys[e.code] = isDown;
+        this.keys[e.key] = isDown;
+        if (isDown) {
+            this.bufferedKeys[e.key] = true;
+            this.bufferedKeys[e.code] = true;
+        }
 
         this.updateActionStates();
     }
 
+    // Virtual Key Support
     setVirtualKey(key, isDown) {
         this.keys[key] = isDown;
         if (isDown) {
@@ -67,12 +67,9 @@ class Input {
     }
 
     updateActionStates() {
-        for (const action in this.mappings) {
-            const keys = this.mappings[action];
-            // An action is active if any of its keys are currently down OR were pressed since last update
-            const isDown = keys.some(k => this.keys[k]);
-            const wasBuffered = keys.some(k => this.bufferedKeys[k]);
-            this.actions[action] = isDown || wasBuffered;
+        // Update current action states based on key/mapping
+        for (const [action, keys] of Object.entries(this.mappings)) {
+            this.actions[action] = keys.some(k => this.keys[k] || this.bufferedKeys[k]);
         }
 
         // Stick calculation (Legacy support for Game.js)
@@ -81,6 +78,7 @@ class Input {
         const left = this.actions.left;
         const right = this.actions.right;
 
+        this.stick = 5;
         if (up && !down) {
             if (left) this.stick = 7;
             else if (right) this.stick = 9;
