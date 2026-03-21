@@ -159,20 +159,8 @@ class Game {
         const frameTime = timestamp - this.lastTime; this.lastTime = timestamp; this.accumulator += frameTime;
 
         while (this.accumulator >= this.deltaTime) {
-            this.input.updateState(); // Poll Input
             this.update(); // Update Logic
-
-            // Reset Input Flags
-            this.input.prevUp = this.input.keys.ArrowUp || this.input.keys.w || this.input.keys['8'];
-            this.input.prevDown = this.input.keys.ArrowDown || this.input.keys.s || this.input.keys['2'];
-            this.input.prevLeft = this.input.keys.ArrowLeft || this.input.keys.a || this.input.keys['4'];
-            this.input.prevRight = this.input.keys.ArrowRight || this.input.keys.d || this.input.keys['6'];
-            this.input.prevGiveUp = this.input.giveUp; // Track abstract input
-            this.input.prevJump = this.input.jump;
-            this.input.prevConfirm = this.input.confirm;
-            this.input.prevSmartLeft = this.input.smartLeft;
-            this.input.prevSmartRight = this.input.smartRight;
-
+            this.input.update(); // Cycle Input (prevActions and Buffers)
             this.accumulator -= this.deltaTime;
         }
 
@@ -210,8 +198,8 @@ class Game {
                     this.editor.update(this.input);
                 }
                 break;
-            case 'GAMEOVER': if (this.input.confirm && !this.input.prevConfirm) this.state = 'TITLE'; break;
-            case 'ALLCLEAR': if (this.input.confirm && !this.input.prevConfirm) this.state = 'TITLE'; break;
+            case 'GAMEOVER': if (this.input.isJustPressed('confirm')) this.state = 'TITLE'; break;
+            case 'ALLCLEAR': if (this.input.isJustPressed('confirm')) this.state = 'TITLE'; break;
         }
     }
 
@@ -230,16 +218,13 @@ class Game {
     }
 
     updateTitle() {
-        const up = (this.input.keys.ArrowUp || this.input.keys.w || this.input.keys['8']) && !this.input.prevUp;
-        const down = (this.input.keys.ArrowDown || this.input.keys.s || this.input.keys['2']) && !this.input.prevDown;
-
-        if (down) this.titleCursor = (this.titleCursor + 1) % 4;
-        if (up) this.titleCursor = (this.titleCursor + 3) % 4; // -1
+        if (this.input.isJustPressed('down')) this.titleCursor = (this.titleCursor + 1) % 4;
+        if (this.input.isJustPressed('up')) this.titleCursor = (this.titleCursor + 3) % 4; // -1
 
         // Title MAIN: never show drag handles
         document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
 
-        if (this.input.confirm && !this.input.prevConfirm) {
+        if (this.input.isJustPressed('confirm')) {
             if (this.titleCursor === 0) {
                 this.selectMode = 'PLAY';
                 this.lives = 3;
@@ -258,17 +243,14 @@ class Game {
     }
 
     updateSettings() {
-        const up = (this.input.keys.ArrowUp || this.input.keys.w || this.input.keys['8']) && !this.input.prevUp;
-        const down = (this.input.keys.ArrowDown || this.input.keys.s || this.input.keys['2']) && !this.input.prevDown;
-
-        if (down) {
+        if (this.input.isJustPressed('down')) {
             this.settingsCursor = (this.settingsCursor + 1) % 6;
             if (this.padType === 0 && (this.settingsCursor === 2 || this.settingsCursor === 3)) {
                 // Guard: Ignore PAD POS/SIZE if padType is NONE
                 this.settingsCursor = 4; // Skip to SCREEN SIZE
             }
         }
-        if (up) {
+        if (this.input.isJustPressed('up')) {
             this.settingsCursor = (this.settingsCursor + 5) % 6; // -1
             if (this.padType === 0 && (this.settingsCursor === 2 || this.settingsCursor === 3)) {
                 this.settingsCursor = 1; // Skip back to PAD TYPE
@@ -283,12 +265,12 @@ class Game {
         });
 
         // Adjustment (Left/Right)
-        const left = (this.input.keys.ArrowLeft || this.input.keys.a || this.input.keys['4']) && !this.input.prevLeft;
-        const right = (this.input.keys.ArrowRight || this.input.keys.d || this.input.keys['6']) && !this.input.prevRight;
+        const left = this.input.isJustPressed('left');
+        const right = this.input.isJustPressed('right');
 
         // Fast adjust hold
-        const holdLeft = (this.input.keys.ArrowLeft || this.input.keys.a || this.input.keys['4']);
-        const holdRight = (this.input.keys.ArrowRight || this.input.keys.d || this.input.keys['6']);
+        const holdLeft = this.input.isPressed('left');
+        const holdRight = this.input.isPressed('right');
 
         if (this.settingsCursor === 0) {
             // SPEED
@@ -337,7 +319,7 @@ class Game {
             }
         }
 
-        if (this.input.confirm && !this.input.prevConfirm) {
+        if (this.input.isJustPressed('confirm')) {
             // BACK
             if (this.settingsCursor === 5) {
                 document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
@@ -346,7 +328,7 @@ class Game {
         }
 
         // Also allow B (giveUp) as quick back
-        if (this.input.giveUp && !this.input.prevGiveUp) {
+        if (this.input.isJustPressed('cancel')) {
             document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
             this.state = 'TITLE';
         }
@@ -354,20 +336,20 @@ class Game {
 
     updateHowToPlay() {
         // Exit to Title (Tap/Confirm)
-        if (this.input.confirm && !this.input.prevConfirm) {
+        if (this.input.isJustPressed('confirm')) {
             this.state = 'TITLE';
         }
         // Also B (giveUp) to back
-        if (this.input.giveUp && !this.input.prevGiveUp) {
+        if (this.input.isJustPressed('cancel')) {
             this.state = 'TITLE';
         }
 
         // Scrolling (Keyboard)
         const speed = 15;
-        if (this.input.keys.ArrowDown || this.input.keys.s || this.input.keys['2']) {
+        if (this.input.isPressed('down')) {
             this.howToPlayScroll += speed;
         }
-        if (this.input.keys.ArrowUp || this.input.keys.w || this.input.keys['8']) {
+        if (this.input.isPressed('up')) {
             this.howToPlayScroll -= speed;
         }
 
@@ -388,17 +370,17 @@ class Game {
             this.selectExitTimer = 0;
         }
 
-        const left = (this.input.keys.ArrowLeft || this.input.keys.a || this.input.keys['4']) && !this.input.prevLeft;
-        const right = (this.input.keys.ArrowRight || this.input.keys.d || this.input.keys['6']) && !this.input.prevRight;
-        const up = (this.input.keys.ArrowUp || this.input.keys.w || this.input.keys['8']) && !this.input.prevUp;
-        const down = (this.input.keys.ArrowDown || this.input.keys.s || this.input.keys['2']) && !this.input.prevDown;
+        const left = this.input.isJustPressed('left');
+        const right = this.input.isJustPressed('right');
+        const up = this.input.isJustPressed('up');
+        const down = this.input.isJustPressed('down');
 
         if (right) this.selectCursor = (this.selectCursor + 1) % 50;
         if (left) this.selectCursor = (this.selectCursor + 49) % 50;
         if (down) this.selectCursor = (this.selectCursor + 10) % 50;
         if (up) this.selectCursor = (this.selectCursor + 40) % 50;
 
-        if (this.input.confirm && !this.input.prevConfirm) {
+        if (this.input.isJustPressed('confirm')) {
             if (this.selectMode === 'PLAY') {
                 // Allow playing any stage
                 this.loadStage(this.selectCursor);

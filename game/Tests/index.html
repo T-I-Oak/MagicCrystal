@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Input Test Runner</title>
+    <script src="../Input.js"></script>
+    <style>
+        body { font-family: monospace; background: #222; color: #eee; padding: 20px; }
+        .pass { color: #0f0; }
+        .fail { color: #f00; font-weight: bold; }
+        .case { margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Input.js Test Results</h1>
+    <div id="results"></div>
+
+    <script src="InputTest.js"></script>
+    <script>
+        const resultsDiv = document.getElementById('results');
+        function log(msg, status) {
+            const div = document.createElement('div');
+            div.className = 'case ' + (status || '');
+            div.innerHTML = `[${status ? status.toUpperCase() : 'INFO'}] ${msg}`;
+            resultsDiv.appendChild(div);
+        }
+
+        async function runTests() {
+            try {
+                await runInputTests(Input, log);
+                log("All tests completed successfully!", 'pass');
+            } catch (e) {
+                log("Test failed: " + e.message, 'fail');
+                console.error(e);
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+</html>

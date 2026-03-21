@@ -79,17 +79,17 @@ class LevelEditor {
         }
 
         // A button: Place current item
-        if (input.jump && !input.prevJump) {
+        if (input.isJustPressed('jump')) {
             this.placeTile(this.selectedTile);
         }
 
         // Q (smartLeft): Cycle current item left
-        if (input.smartLeft && !input.prevSmartLeft) {
+        if (input.isJustPressed('smartLeft')) {
             this.selectedTile = (this.selectedTile + 7) % 8; // -1 with wrap
         }
 
         // E (smartRight): Cycle current item right
-        if (input.smartRight && !input.prevSmartRight) {
+        if (input.isJustPressed('smartRight')) {
             this.selectedTile = (this.selectedTile + 1) % 8;
         }
     }
