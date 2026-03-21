@@ -161,9 +161,8 @@ class Physics {
             return;
         }
 
-        // Standard Inputs
-        // Jump: 8 (Up), 7 (UpLeft), 9 (UpRight)
-        if (input.stick === 8 || input.stick === 7 || input.stick === 9) {
+        // Jump: 8 (Up), 7 (UpLeft), 9 (UpRight) or Jump Action
+        if (input.stick === 8 || input.stick === 7 || input.stick === 9 || input.actions.jump) {
             // Auto-turn for diagonal jumps if facing wrong way
             let dx = 0;
             if (input.stick === 7) dx = -1;

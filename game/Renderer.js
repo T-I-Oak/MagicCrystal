@@ -679,23 +679,156 @@ class Renderer {
 
         this.ctx.fillStyle = '#ddd'; this.ctx.font = '20px monospace';
         this.ctx.fillText("初期ライフは3で、0になるとゲームオーバーです。", x + 50, y); y += gap;
-        this.ctx.fillText("ステージをクリアするたびにライフが1つ増えます。（最大9）", x + 50, y); y += gap;
+        this.ctx.fillText("ステージをクリアするたびにライフが1つ増えます。（最大9）", x + 50, y); y += 50;
 
         // === CONTROLS ===
-        this.ctx.fillStyle = '#ffcc00'; this.ctx.font = '24px monospace';
-        this.ctx.fillText("■ 操作方法", x - 20, y); y += 40;
+        this.ctx.fillStyle = '#ffcc00'; this.ctx.font = 'bold 26px monospace';
+        this.ctx.fillText("■ 操作方法", x - 20, y); y += 45;
 
-        this.ctx.fillStyle = '#fff';
-        // Player Icon
-        this.ctx.drawImage(this.assets.player.standRight, x, y - 25, 40, 40);
-        this.ctx.fillText("キーボード / タッチ", x + 50, y); y += 40;
+        // Table Constants
+        const tableX = 40;
+        const colW = [180, 200, 160, 160, 180]; // Item, WASD/Arrow, Numpad, Soft, Gamepad
+        const rowH = 50;
+        const tableW = colW.reduce((a, b) => a + b, 0);
 
-        const ctrlX = x + 50;
-        this.ctx.fillStyle = '#ccc';
-        this.ctx.fillText("移動　　　 : 矢印キー / 十字キー", ctrlX, y); y += gap;
-        this.ctx.fillText("ジャンプ　 : Z / Aボタン", ctrlX, y); y += gap;
-        this.ctx.fillText("穴掘り/魔法: X / Bボタン", ctrlX, y); y += gap;
-        this.ctx.fillText("ギブアップ : X長押し", ctrlX, y); y += gap;
+        // Header Style
+        this.ctx.fillStyle = '#222';
+        this.ctx.fillRect(tableX, y, tableW, rowH);
+        this.ctx.strokeStyle = '#555';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(tableX, y, tableW, rowH);
+
+        this.ctx.fillStyle = '#aaa';
+        this.ctx.font = 'bold 18px monospace';
+        this.ctx.textAlign = 'center';
+        const headers = ["操作項目", "WASD / 矢印", "テンキー", "ソフトパッド", "Gamepad"];
+        let curX = tableX;
+        for (let i = 0; i < headers.length; i++) {
+            this.ctx.fillText(headers[i], curX + colW[i] / 2, y + 32);
+            curX += colW[i];
+            if (i < headers.length - 1) {
+                this.ctx.beginPath(); this.ctx.moveTo(curX, y); this.ctx.lineTo(curX, y + rowH); this.ctx.stroke();
+            }
+        }
+        y += rowH;
+
+        // Data Rows
+        const rows = [
+            ["左右移動", "A / D / ← / →", "4 / 6", "◀ / ▶", "十字キー / Stick"],
+            ["ジャンプ※1", "W / ↑", "8", "▲", "十字キー上"],
+            ["Sジャンプ※2", "Q / E", "7 / 9", "↖ / ↗", "L1 / R1"],
+            ["穴掘り", "S / ↓ / Space", "1 / 2 / 5", "▼ / A", "A"],
+            ["リタイア※3", "X / (長押し)", "3 / (長押し)", "B / (長押し)", "B / (長押し)"]
+        ];
+
+        // Row Icon Helper
+        const drawIconBox = (ctx, bx, by, bw, bh, text, style) => {
+            ctx.save();
+            const radius = (style === 'circle-a' || style === 'circle-b') ? bw / 2 : 6;
+            ctx.beginPath();
+            if (style === 'circle-a' || style === 'circle-b') {
+                ctx.arc(bx + bw / 2, by + bh / 2, bw / 2, 0, Math.PI * 2);
+            } else {
+                ctx.moveTo(bx + radius, by);
+                ctx.lineTo(bx + bw - radius, by); ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + radius);
+                ctx.lineTo(bx + bw, by + bh - radius); ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - radius, by + bh);
+                ctx.lineTo(bx + radius, by + bh); ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - radius);
+                ctx.lineTo(bx, by + radius); ctx.quadraticCurveTo(bx, by, bx + radius, by);
+            }
+            ctx.closePath();
+
+            if (style === 'key') {
+                ctx.fillStyle = '#444'; ctx.fill();
+                ctx.strokeStyle = '#888'; ctx.lineWidth = 1; ctx.stroke();
+                ctx.strokeStyle = '#aaa'; ctx.beginPath(); ctx.moveTo(bx + 2, by + 1); ctx.lineTo(bx + bw - 2, by + 1); ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 15px monospace';
+            } else if (style === 'pad') {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#ddd'; ctx.font = '24px "Segoe UI Symbol", sans-serif';
+            } else if (style === 'smart') {
+                ctx.fillStyle = 'rgba(255, 200, 0, 0.15)'; ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 200, 0, 0.4)'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#ffcc00'; ctx.font = '22px "Segoe UI Symbol", sans-serif';
+            } else if (style === 'circle-a') {
+                ctx.fillStyle = 'rgba(80, 80, 255, 0.3)'; ctx.fill();
+                ctx.strokeStyle = 'rgba(120, 120, 255, 0.6)'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 20px monospace';
+            } else if (style === 'circle-b') {
+                ctx.fillStyle = 'rgba(255, 80, 80, 0.3)'; ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 120, 120, 0.6)'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 20px monospace';
+            }
+            ctx.textAlign = 'center';
+            ctx.fillText(text, bx + bw / 2, by + bh / 2 + (style.startsWith('circle') ? 8 : 7));
+            ctx.restore();
+        };
+
+        rows.forEach((row, rowIndex) => {
+            this.ctx.fillStyle = (rowIndex % 2 === 0) ? '#111' : '#1a1a1a';
+            this.ctx.fillRect(tableX, y, tableW, rowH);
+            this.ctx.strokeStyle = '#444'; this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(tableX, y, tableW, rowH);
+
+            curX = tableX;
+            row.forEach((cell, i) => {
+                const centerX = curX + colW[i] / 2;
+                const centerY = y + rowH / 2;
+
+                if (i === 0) { // Item Name
+                    this.ctx.fillStyle = '#ffcc00'; this.ctx.font = 'bold 18px monospace';
+                    this.ctx.textAlign = 'center'; this.ctx.fillText(cell, centerX, centerY + 8);
+                } else { // Icon-able columns (1-4)
+                    const items = cell.split(' / ');
+                    let totalW = 0;
+                    items.forEach(it => {
+                        if (it.startsWith('(')) totalW += it.length * 9;
+                        else {
+                            const kw = (it.length > 3 && i !== 3) ? 80 : 40;
+                            totalW += kw;
+                        }
+                        totalW += 6;
+                    });
+
+                    let startX = centerX - (totalW - 6) / 2;
+                    items.forEach(it => {
+                        if (it.startsWith('(')) {
+                            this.ctx.fillStyle = '#aaa'; this.ctx.font = '13px monospace';
+                            this.ctx.textAlign = 'center';
+                            const sw = it.length * 9;
+                            this.ctx.fillText(it, startX + sw / 2, centerY + 6);
+                            startX += sw + 6;
+                        } else {
+                            let style = (i === 4) ? 'key' : 'key';
+                            if (i === 3) {
+                                style = (rowIndex === 2) ? 'smart' : 'pad';
+                                if (it === 'A') style = 'circle-a';
+                                if (it === 'B') style = 'circle-b';
+                            }
+                            const kw = (it.length > 3 && style === 'key') ? 80 : 40;
+                            drawIconBox(this.ctx, startX, centerY - (i === 3 ? 18 : 15), kw, (i === 3 ? 36 : 30), it, style);
+                            startX += kw + 6;
+                        }
+                    });
+                }
+
+                curX += colW[i];
+                if (i < row.length - 1) {
+                    this.ctx.strokeStyle = '#444'; this.ctx.lineWidth = 1;
+                    this.ctx.beginPath(); this.ctx.moveTo(curX, y); this.ctx.lineTo(curX, y + rowH); this.ctx.stroke();
+                }
+            });
+            y += rowH;
+        });
+
+        // Footnotes
+        y += 20;
+        this.ctx.textAlign = 'left';
+        this.ctx.fillStyle = '#aaa';
+        this.ctx.font = '16px monospace';
+        this.ctx.fillText("※1 ジャンプ         : 向いている方向にジャンプします。", tableX, y); y += 22;
+        this.ctx.fillText("※2 スマートジャンプ : 指定した方向にジャンプします。", tableX, y); y += 22;
+        this.ctx.fillText("※3 リタイア         : ライフを1つ失い、ステージをやり直します。", tableX, y); y += 40;
 
         this.ctx.restore();
     }

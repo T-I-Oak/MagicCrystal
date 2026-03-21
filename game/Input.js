@@ -143,9 +143,10 @@ class Input {
         // 0: A/Cross, 1: B/Circle, 4: L1, 5: R1, 12-15: D-pad
         if (gamepad.buttons[0].pressed) {
             this.actions.confirm = true;
-            this.actions.jump = true;
         }
-        if (gamepad.buttons[1].pressed) this.actions.cancel = true;
+        if (gamepad.buttons[1].pressed) {
+            this.actions.cancel = true;
+        }
         if (gamepad.buttons[4].pressed) this.actions.smartLeft = true;
         if (gamepad.buttons[5].pressed) this.actions.smartRight = true;
 

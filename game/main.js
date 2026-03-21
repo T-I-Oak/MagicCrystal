@@ -142,9 +142,11 @@ window.onload = async () => {
 
     let lastY = 0;
     let isMoving = false;
+    let isPointerDownForMenu = false;
 
     const handleMenuPointerDown = (clientX, clientY) => {
         if (!game) return;
+        isPointerDownForMenu = true;
         const { x, y } = getCanvasPointer(clientX, clientY);
         lastY = clientY;
         isMoving = false;
@@ -249,7 +251,7 @@ window.onload = async () => {
     };
 
     const handleMenuPointerMove = (clientX, clientY) => {
-        if (!game) return;
+        if (!game || !isPointerDownForMenu) return;
         const { x, y } = getCanvasPointer(clientX, clientY);
 
         if (game.state === 'HOW_TO_PLAY') {
@@ -304,6 +306,7 @@ window.onload = async () => {
             game.saveSettings();
         }
         isMoving = false;
+        isPointerDownForMenu = false;
 
         // Always release virtual keys and pointer state
         game.input.setVirtualKey('x', false);
