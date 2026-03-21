@@ -3,7 +3,7 @@ class Game {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.assets = assets; // Injected (Loaded)
-        this.version = "1.0.25";
+        this.version = "1.0.26";
 
         // HIGH RES UPDATE: 40x40 per tile
         this.tileWidth = 40;
@@ -129,7 +129,7 @@ class Game {
                 if (this.level.data[y][x] === 4 || this.level.data[y][x] === 5) this.crystalCount++;
             }
         }
-        this.player = { x: startX, y: startY, vx: 0, vy: 0, jumpState: 0, faceRight: true, lives: 3, turnWait: 0 };
+        this.player = { x: startX, y: startY, vx: 0, vy: 0, jumpState: 0, faceRight: true, lives: 3 };
         this.ES = 0; // Earthquake Switch
     }
 

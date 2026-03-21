@@ -120,30 +120,32 @@ class Physics {
     }
 
     processInput(player, level, input, game) {
-        if (player.turnWait > 0) {
-            player.turnWait--;
-            if (player.turnWait <= 0) {
-                player.turnWait = 0;
-                player.isDigging = false; // Reset state
+        // 1. Down Button or B Button (Turn Around & Lock)
+        // If Down or B is held, change direction only on the first frame and block all other actions.
+        if (input.actions.down || input.actions.cancel) {
+            if (input.isJustPressed('down') || input.isJustPressed('cancel')) {
+                player.faceRight = !player.faceRight;
             }
+            player.sx = 0;
+            player.isDigging = false;
             return;
         }
 
-        // Digging (Down or Confirm/Space)
-        if (input.stick === 2 || input.actions.confirm) {
+        // 2. Digging (A Button / Confirm Only)
+        if (input.actions.confirm) {
             const gridX = Math.floor(player.x / 4);
             const gridY = Math.floor(player.y / 4);
             const tileBelow = level.getTile(gridX, gridY + 1);
             if (tileBelow === 1) { // Only Dig Dirt (1)
                 level.setTile(gridX, gridY + 1, 6); // Turn into Dirt 2 (6)
                 player.sx = 0; player.sy = 0;
-                player.turnWait = 2; // Original DS=2
                 player.isDigging = true;
                 return;
             }
         }
+        player.isDigging = false;
 
-        // Smart Keys (Q/E)
+        // 3. Smart Keys (Q/E) - Turn once, then Jump
         if (input.smartLeft) {
             if (player.faceRight) {
                 player.faceRight = false;
@@ -161,37 +163,33 @@ class Physics {
             return;
         }
 
-        // Jump: 8 (Up), 7 (UpLeft), 9 (UpRight) or Jump Action
+        // 4. Jump (Up or Jump Action)
         if (input.stick === 8 || input.stick === 7 || input.stick === 9 || input.actions.jump) {
-            // Auto-turn for diagonal jumps if facing wrong way
             let dx = 0;
             if (input.stick === 7) dx = -1;
             else if (input.stick === 9) dx = 1;
 
             if (dx !== 0 && ((dx === 1 && !player.faceRight) || (dx === -1 && player.faceRight))) {
                 player.faceRight = (dx === 1);
-                player.turnWait = 3;
                 player.sx = 0;
-                return;
+                return; // Turn Frame (1F)
             }
-            player.jumpState = 9; return;
+            player.jumpState = 9;
+            return;
         }
 
+        // 5. Normal Move (Left/Right)
         let dx = 0;
-        // Check Move Intent
         if (input.stick === 4 || input.stick === 1) dx = -1;
         else if (input.stick === 6 || input.stick === 3) dx = 1;
 
         if (dx !== 0) {
-            // Turn Logic: If changing direction, Turn ONLY.
             if ((dx === 1 && !player.faceRight) || (dx === -1 && player.faceRight)) {
                 player.faceRight = (dx === 1);
-                player.turnWait = 3; // 3 Frames Fixed Wait
-                player.sx = 0;
-                return;
+                player.sx = 0; 
+                return; // Turn Frame (1F)
             }
 
-            // Move Logic (Already facing correct way)
             const gridX = Math.floor(player.x / 4);
             const gridY = Math.floor(player.y / 4);
             const tileNext = level.getTile(gridX + dx, gridY);
