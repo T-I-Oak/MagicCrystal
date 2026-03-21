@@ -109,12 +109,89 @@ class Input {
     update() {
         // Copy current actions to prevActions for edge detection
         this.prevActions = { ...this.actions };
-        
+
         // Reset buffers
         this.bufferedKeys = {};
-        
-        // Recalculate based on current raw state (without buffer)
+
+        // 1. Update Keyboard/Virtual Key actions first
         this.updateActionStates();
+
+        // 2. Poll Gamepad
+        this.pollGamepad();
+    }
+
+    pollGamepad() {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        const gamepad = gamepads[0]; // Support first connected gamepad
+        if (!gamepad) return;
+
+        const deadzone = 0.25;
+
+        // Axes (L-Stick)
+        const ax = gamepad.axes[0];
+        const ay = gamepad.axes[1];
+
+        if (ax < -deadzone) this.actions.left = true;
+        if (ax > deadzone) this.actions.right = true;
+        if (ay < -deadzone) {
+            this.actions.up = true;
+            this.actions.jump = true;
+        }
+        if (ay > deadzone) this.actions.down = true;
+
+        // Buttons
+        // 0: A/Cross, 1: B/Circle, 4: L1, 5: R1, 12-15: D-pad
+        if (gamepad.buttons[0].pressed) {
+            this.actions.confirm = true;
+            this.actions.jump = true;
+        }
+        if (gamepad.buttons[1].pressed) this.actions.cancel = true;
+        if (gamepad.buttons[4].pressed) this.actions.smartLeft = true;
+        if (gamepad.buttons[5].pressed) this.actions.smartRight = true;
+
+        // D-pad
+        if (gamepad.buttons[12] && gamepad.buttons[12].pressed) {
+            this.actions.up = true;
+            this.actions.jump = true;
+        }
+        if (gamepad.buttons[13] && gamepad.buttons[13].pressed) this.actions.down = true;
+        if (gamepad.buttons[14] && gamepad.buttons[14].pressed) this.actions.left = true;
+        if (gamepad.buttons[15] && gamepad.buttons[15].pressed) this.actions.right = true;
+
+        // Re-sync properties for direct access
+        this.jump = this.actions.jump;
+        this.confirm = this.actions.confirm;
+        this.giveUp = this.actions.cancel;
+        this.smartLeft = this.actions.smartLeft;
+        this.smartRight = this.actions.smartRight;
+
+        // Update stick value for legacy support
+        this.updateStickFromActions();
+    }
+
+    updateStickFromActions() {
+        const up = this.actions.up;
+        const down = this.actions.down;
+        const left = this.actions.left;
+        const right = this.actions.right;
+
+        if (up && !down) {
+            if (left) this.stick = 7;
+            else if (right) this.stick = 9;
+            else this.stick = 8;
+        } else if (down && !up) {
+            if (left) this.stick = 1;
+            else if (right) this.stick = 3;
+            else this.stick = 2;
+        } else if (left && !right) {
+            this.stick = 4;
+        } else if (right && !left) {
+            this.stick = 6;
+        } else if (!up && !down && !left && !right) {
+            this.stick = 0;
+        } else {
+            this.stick = 0; // Contradictory inputs
+        }
     }
 
     isPressed(action) {

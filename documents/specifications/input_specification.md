@@ -7,16 +7,28 @@
 ## 抽象入力（アクション）のマッピング
 以下の「アクション」に対して、複数の物理キーが割り当てられています。
 
-| アクション | 割り当てキー | 内容 |
-| :--- | :--- | :--- |
-| `down` | `ArrowDown`, `s`, `Numpad5`, `Numpad2` | 下方向（メニュー移動用） |
-| `left` | `ArrowLeft`, `a`, `Numpad4` | 左方向 |
-| `right` | `ArrowRight`, `d`, `Numpad6` | 右方向 |
-| `jump` | `ArrowUp`, `w`, `Numpad8` | ジャンプ（上方向入力） |
-| `confirm` | `z`, `Enter`, `Space`, `Numpad1` | 決定（メニュー選択） / **穴掘り** (プレイ中) |
-| `cancel` | `x`, `Numpad3` | キャンセル / ギブアップ（仮想ボタン：B） |
-| `smartLeft` | `q`, `Numpad7` | 左クイックターン / 反転ジャンプ / エディタ：前のタイル |
-| `smartRight` | `e`, `Numpad9` | 右クイックターン / 反転ジャンプ / エディタ：次のタイル |
+| アクション | キーボード | ゲームパッド (Standard) | 内容 |
+| :--- | :--- | :--- | :--- |
+| `up` | `ArrowUp`, `w`, `Numpad8` | D-pad Up, L-Stick Up | 下方向（メニュー移動用） |
+| `down` | `ArrowDown`, `s`, `Numpad5`, `Numpad2` | D-pad Down, L-Stick Down | 下方向 |
+| `left` | `ArrowLeft`, `a`, `Numpad4` | D-pad Left, L-Stick Left | 左方向 |
+| `right` | `ArrowRight`, `d`, `Numpad6` | D-pad Right, L-Stick Right | 右方向 |
+| `jump` | `ArrowUp`, `w`, `Numpad8` | A ボタン (0), L-Stick Up | ジャンプ |
+| `confirm` | `z`, `Enter`, `Space`, `Numpad1` | A ボタン (0) | 決定 / 穴掘り |
+| `cancel` | `x`, `Numpad3` | B ボタン (1) | キャンセル / ギブアップ |
+| `smartLeft` | `q`, `Numpad7` | L1 (4) | 左クイックターン / 反転ジャンプ |
+| `smartRight` | `e`, `Numpad9` | R1 (5) | 右クイックターン / 反転ジャンプ |
+
+## ゲームパッド詳細マッピング
+Standard Gamepad Layout に基づき、以下のようにマッピングします。
+
+- **方向キー**: D-pad (Buttons 12-15) および 左スティック (Axes 0, 1)
+- **決定 (Confirm)**: Button 0 (A / Cross)
+- **キャンセル (Cancel)**: Button 1 (B / Circle)
+- **ジャンプ (Jump)**: Button 0 (A / Cross) または 上方向入力
+- **スマートジャンプ (Smart Left/Right)**: Buttons 4 (L1), 5 (R1)
+  - L1キー1回押しで左向き、再度押し（または向き変更済みで押し）で左反転ジャンプとなります。
+- **一時停止 (Pause)**: Button 9 (Start)
 
 ## エディター専用キー
 エディターモードでは、上記のアクションに加えて以下の操作が可能です。
