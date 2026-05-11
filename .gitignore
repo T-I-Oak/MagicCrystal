@@ -1,2 +1,7 @@
 __*
 local_*
+tmp_*
+dev_*
+_agent/
+node_modules/
+dist/
