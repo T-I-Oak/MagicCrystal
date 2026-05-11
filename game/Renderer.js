@@ -1,4 +1,6 @@
-class Renderer {
+import { ALL_LEVELS } from './levels.js';
+
+export class Renderer {
     constructor(ctx, assets) {
         this.ctx = ctx; this.assets = assets;
         this.tileWidth = 40; this.tileHeight = 40;

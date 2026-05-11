@@ -1,4 +1,6 @@
-class Level {
+import { ALL_LEVELS } from './levels.js';
+
+export class Level {
     constructor(cols = 24, rows = 13) {
         this.cols = cols; this.rows = rows;
         this.data = new Array(rows).fill(0).map(() => new Array(cols).fill(0));
@@ -38,7 +40,7 @@ class Level {
     }
 }
 
-class LevelEditor {
+export class LevelEditor {
     constructor(level) {
         this.level = level;
         this.cx = 4; // Cursor X

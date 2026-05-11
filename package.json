@@ -1,0 +1,29 @@
+{
+  "name": "magiccrystal",
+  "version": "0.1.0",
+  "description": "Magic Crystal - A retro-style puzzle action game.",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/T-I-Oak/MagicCrystal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/T-I-Oak/MagicCrystal/issues"
+  },
+  "homepage": "https://github.com/T-I-Oak/MagicCrystal#readme",
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "postcss": "^8.5.14",
+    "vite": "^8.0.12",
+    "vitest": "^4.1.5"
+  }
+}

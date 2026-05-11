@@ -1,9 +1,14 @@
-class Game {
+import { Input } from './Input.js';
+import { Level, LevelEditor } from './Level.js';
+import { Physics } from './Physics.js';
+import { Renderer } from './Renderer.js';
+
+export class Game {
     constructor(canvas, assets) {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.assets = assets; // Injected (Loaded)
-        this.version = "1.0.27";
+        this.version = __APP_VERSION__;
 
         // HIGH RES UPDATE: 40x40 per tile
         this.tileWidth = 40;

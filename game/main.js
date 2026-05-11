@@ -1,3 +1,6 @@
+import { Assets } from './Assets.js';
+import { Game } from './Game.js';
+
 window.onload = async () => {
     const assets = new Assets();
     await assets.load();

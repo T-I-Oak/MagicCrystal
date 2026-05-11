@@ -39,45 +39,7 @@
     - 取り込んだらそのままプレイ画面に遷移する
     - 仕組みとしては、URLのqueryにbase64でエンコードされたタイトル、難易度、マップデータがあるイメージ
 
-## プロジェクト管理・ビルド環境
-- [ ] 現在のバージョンを0.xにする（βバージョン）
-- [ ] バージョン管理を package.json での管理に一本化する
-- [ ] Viteでのビルド設定
-    - Viteの導入と基本構成の設定（npx init vite または追加）
-    - package.json に type: "module" を追加
-    - scripts 定義 (dev, build, preview, test)
-    - 依存パッケージのインストール (vite, vitest, jsdom, postcss)
-    - vite.config.js の詳細設定
-        - base 設定（GitHub Pages等対応）
-        - define で package.json から __APP_VERSION__ を注入
-        - build.target: 'esnext', build.cssTarget: 'chrome100'
-        - build.cssMinify: false
-        - rollupOptions.output で assets/ フォルダに統一しハッシュ付与
-    - テスト環境の整備 (Vitest, jsdom)
-- [ ] プロジェクトルートに update_history.json を作成・管理
-    - 以下の形式で履歴を保持する
-      ```json
-      [
-        {
-          "version": "1.0",
-          "date": "2026-05-10",
-          "title": "パフォーマンス改善",
-          "description": "レンダリングエンジンの最適化により、動作がよりスムーズになりました。",
-          "changes": [
-            "描画処理のメモリ使用量を15%削減",
-            "特定の条件下で発生していたグリッチの修正",
-            "UI의 レスポンス向上"
-          ]
-        },
-        {
-          "version": "1.1",
-          "date": "2026-05-08",
-          "title": "初期安定化アップデート",
-          "description": "リリース後のフィードバックに基づいた修正を行いました。",
-          "changes": []
-        }
-      ]
-      ```
+
 
 ## 【共通バックログ】将来の共通基盤化を見据えた DataManager 標準規約
 - [ ] 将来の共通基盤化を見据えた DataManager の標準インターフェースを実装する

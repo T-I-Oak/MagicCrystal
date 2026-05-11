@@ -1,4 +1,4 @@
-class Input {
+export class Input {
     constructor() {
         this.keys = {};
         this.prevKeys = {};

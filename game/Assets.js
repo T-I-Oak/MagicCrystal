@@ -1,4 +1,4 @@
-class Assets {
+export class Assets {
     constructor() {
         this.tiles = {};
         this.player = {};

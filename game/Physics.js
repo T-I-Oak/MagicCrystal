@@ -1,4 +1,4 @@
-class Physics {
+export class Physics {
     isAligned(player) {
         return (player.x % 4 === 0 && player.y % 4 === 0);
     }
