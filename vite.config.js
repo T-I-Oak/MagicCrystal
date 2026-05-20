@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 export default defineConfig({
-  base: './', // GitHub Pages support
+  base: '/MagicCrystal/',
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
   },
