@@ -5,7 +5,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     define: {
-      __APP_VERSION__: '"0.1.0"',
+      __APP_VERSION__: '"0.1.1"',
     },
   },
 });

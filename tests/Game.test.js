@@ -29,15 +29,15 @@ describe('Game Class', () => {
     it('should initialize with correct version from Vite define', () => {
         // Note: __APP_VERSION__ is usually defined by Vite during build/dev.
         // For Vitest, we might need to define it in vitest.config.js or globally here.
-        global.__APP_VERSION__ = '0.1.0';
+        global.__APP_VERSION__ = '0.1.1';
         
         const game = new Game(mockCanvas, mockAssets);
-        expect(game.version).toBe('0.1.0');
+        expect(game.version).toBe('0.1.1');
         expect(game.state).toBe('TITLE');
     });
 
     it('should have 3 lives initially', () => {
-        global.__APP_VERSION__ = '0.1.0';
+        global.__APP_VERSION__ = '0.1.1';
         const game = new Game(mockCanvas, mockAssets);
         expect(game.lives).toBe(3);
     });
