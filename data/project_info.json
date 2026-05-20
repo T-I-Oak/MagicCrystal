@@ -1,0 +1,19 @@
+{
+  "title": "Magic Crystal",
+  "description": "魔法使いを操作して赤と青のクリスタルを集め、地下迷宮を攻略するレトロ風パズルアクションゲーム。",
+  "tags": ["パズルアクション", "レトロ", "シングルプレイ"],
+  "logo": {
+    "path": "assets/logo.png",
+    "type": "standard"
+  },
+  "badge": {
+    "content": "PLAYABLE",
+    "type": "info"
+  },
+  "button": {
+    "content": "PLAY NOW",
+    "url": "https://t-i-oak.github.io/MagicCrystal/",
+    "type": "published"
+  },
+  "image": "assets/title.png"
+}
