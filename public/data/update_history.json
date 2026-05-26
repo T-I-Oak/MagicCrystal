@@ -1,6 +1,21 @@
 [
   {
     "version": "0.1",
+    "date": "2026-05-26",
+    "content": [
+      {
+        "type": "imp",
+        "text": {
+          "lang-store": {
+            "ja": "ポータルのゲーム紹介カードが英語表示に対応",
+            "en": "Add English display support for the portal game card"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "version": "0.1",
     "date": "2026-05-20",
     "content": [
       { "type": "new", "text": "GitHub Pages でプレイできる公開構成を追加" },
