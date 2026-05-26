@@ -1,17 +1,56 @@
 {
-  "title": "Magic Crystal",
-  "description": "魔導師見習いとして、大地の記憶を操る「魔力の結晶」を集める冒険へ。赤と青、ふたつの魔力を使い分け、変化する地形を乗り越えて。",
-  "tags": ["レトロ・アクション", "パズル", "ステージクリア型"],
+  "title": {
+    "lang-store": {
+      "ja": "Magic Crystal",
+      "en": "Magic Crystal"
+    }
+  },
+  "description": {
+    "lang-store": {
+      "ja": "魔導師見習いとして、大地の記憶を操る「魔力の結晶」を集める冒険へ。赤と青、ふたつの魔力を使い分け、変化する地形を乗り越えて。",
+      "en": "Set out as an apprentice mage to collect Magic Crystals that reshape the land's memory. Switch between red and blue powers to cross shifting terrain."
+    }
+  },
+  "tags": [
+    {
+      "lang-store": {
+        "ja": "レトロ・アクション",
+        "en": "Retro Action"
+      }
+    },
+    {
+      "lang-store": {
+        "ja": "パズル",
+        "en": "Puzzle"
+      }
+    },
+    {
+      "lang-store": {
+        "ja": "ステージクリア型",
+        "en": "Stage Clear"
+      }
+    }
+  ],
   "logo": {
     "path": "assets/logo.png",
     "type": "standard"
   },
   "badge": {
-    "content": "7月公開予定",
+    "content": {
+      "lang-store": {
+        "ja": "7月公開予定",
+        "en": "Coming in July"
+      }
+    },
     "type": "info"
   },
   "button": {
-    "content": "COMING SOON",
+    "content": {
+      "lang-store": {
+        "ja": "COMING SOON",
+        "en": "COMING SOON"
+      }
+    },
     "url": "https://t-i-oak.github.io/MagicCrystal/",
     "type": "pending"
   },
