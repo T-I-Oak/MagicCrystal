@@ -2,6 +2,10 @@ import { Input } from './Input.js';
 import { Level, LevelEditor } from './Level.js';
 import { Physics } from './Physics.js';
 import { Renderer } from './Renderer.js';
+import { getActiveLanguage, onLanguageChange, setLanguage } from '../../GameWorksOAK/src/lib/core/i18n.js';
+import { SUPPORTED_LANGUAGES, t, tr } from './i18nText.js';
+
+const SETTINGS_ITEM_COUNT = 7;
 
 export class Game {
     constructor(canvas, assets) {
@@ -41,9 +45,14 @@ export class Game {
         // UI State
         // Title menus are split into MAIN and SETTINGS screens
         this.titleCursor = 0;     // MAIN title menu cursor (0..3)
-        this.settingsCursor = 0;  // SETTINGS menu cursor (0..5)
+        this.settingsCursor = 0;  // SETTINGS menu cursor
         this.selectCursor = 0;
         this.selectMode = 'PLAY';
+        this.supportedLanguages = SUPPORTED_LANGUAGES;
+        this.language = getActiveLanguage();
+        this.unsubscribeLanguageChange = onLanguageChange((language) => {
+            this.language = language;
+        });
 
         // Settings
         this.padType = 1; // 0: None, 1: Single, 2: Dual (Changed from 0:S, 1:D)
@@ -254,14 +263,14 @@ export class Game {
 
     updateSettings() {
         if (this.input.isJustPressed('down')) {
-            this.settingsCursor = (this.settingsCursor + 1) % 6;
+            this.settingsCursor = (this.settingsCursor + 1) % SETTINGS_ITEM_COUNT;
             if (this.padType === 0 && (this.settingsCursor === 2 || this.settingsCursor === 3)) {
                 // Guard: Ignore PAD POS/SIZE if padType is NONE
                 this.settingsCursor = 4; // Skip to SCREEN SIZE
             }
         }
         if (this.input.isJustPressed('up')) {
-            this.settingsCursor = (this.settingsCursor + 5) % 6; // -1
+            this.settingsCursor = (this.settingsCursor + SETTINGS_ITEM_COUNT - 1) % SETTINGS_ITEM_COUNT;
             if (this.padType === 0 && (this.settingsCursor === 2 || this.settingsCursor === 3)) {
                 this.settingsCursor = 1; // Skip back to PAD TYPE
             }
@@ -327,11 +336,15 @@ export class Game {
                 window.dispatchEvent(new Event('resize'));
                 this.saveSettings();
             }
+        } else if (this.settingsCursor === 5) {
+            // LANGUAGE
+            if (left) this.changeLanguage(-1);
+            if (right) this.changeLanguage(1);
         }
 
         if (this.input.isJustPressed('confirm')) {
             // BACK
-            if (this.settingsCursor === 5) {
+            if (this.settingsCursor === 6) {
                 document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
                 this.state = 'TITLE';
             }
@@ -363,8 +376,8 @@ export class Game {
             this.howToPlayScroll -= speed;
         }
 
-        // Max scroll content: Content height is big.
-        this.howToPlayScroll = Math.max(0, Math.min(this.howToPlayScroll, 1600));
+        // Max scroll content: Content height varies by language.
+        this.howToPlayScroll = Math.max(0, Math.min(this.howToPlayScroll, 1900));
     }
 
     updateSelect() {
@@ -461,6 +474,26 @@ export class Game {
 
     render() {
         this.renderer.render(this.level, this.player, this.editor, this.state, this.ES, this);
+    }
+
+    changeLanguage(direction) {
+        const current = getActiveLanguage();
+        const currentIndex = Math.max(0, this.supportedLanguages.indexOf(current));
+        const nextIndex = (currentIndex + direction + this.supportedLanguages.length) % this.supportedLanguages.length;
+        setLanguage(this.supportedLanguages[nextIndex]);
+        this.language = getActiveLanguage();
+    }
+
+    getLanguageLabel(language = getActiveLanguage()) {
+        return t(`common.languageNames.${language}`);
+    }
+
+    t(path, params = {}) {
+        return t(path, params);
+    }
+
+    tr(path, params = {}) {
+        return tr(path, params);
     }
 
     handleGameOver() {

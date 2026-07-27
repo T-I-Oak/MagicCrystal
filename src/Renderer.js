@@ -1,4 +1,5 @@
 import { ALL_LEVELS } from './levels.js';
+import { createSettingsLayout } from './settingsLayout.js';
 
 export class Renderer {
     constructor(ctx, assets) {
@@ -142,7 +143,7 @@ export class Renderer {
             // Draw Stage Number (Right side)
             this.ctx.textAlign = 'right';
             this.ctx.font = '35px monospace';
-            this.ctx.fillText("STAGE " + (game.stage + 1), this.ctx.canvas.width - 20, hudY + 35);
+            this.ctx.fillText(game.t('play.stage', { number: game.stage + 1 }), this.ctx.canvas.width - 20, hudY + 35);
 
             this.ctx.restore();
         }
@@ -152,7 +153,7 @@ export class Renderer {
             this.ctx.fillStyle = '#fff';
             this.ctx.font = '20px monospace';
             this.ctx.textAlign = 'left';
-            this.ctx.fillText("EDITOR MODE", 10, 28);
+            this.ctx.fillText(game.t('play.editorMode'), 10, 28);
 
             // Tile placement guide
             this.ctx.font = '16px monospace';
@@ -228,12 +229,12 @@ export class Renderer {
             this.ctx.fillStyle = '#fff';
             this.ctx.font = 'bold 20px monospace';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText("X (B) BACK ●", btnX + btnW / 2, btnY + 28);
+            this.ctx.fillText(game.t('play.back'), btnX + btnW / 2, btnY + 28);
         } else {
             this.ctx.fillStyle = '#fff';
             this.ctx.font = 'bold 20px monospace';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText("X (B) RETIRE ●", btnX + btnW / 2, btnY + 28);
+            this.ctx.fillText(game.t('play.retire'), btnX + btnW / 2, btnY + 28);
         }
         this.ctx.textAlign = 'left';
 
@@ -242,22 +243,22 @@ export class Renderer {
             this.ctx.fillStyle = '#ff0';
             this.ctx.font = '80px monospace';
             this.ctx.strokeStyle = '#000'; this.ctx.lineWidth = 4;
-            this.ctx.strokeText("Clear!!", 320, 280);
-            this.ctx.fillText("Clear!!", 320, 280);
+            this.ctx.strokeText(game.t('play.clear'), 320, 280);
+            this.ctx.fillText(game.t('play.clear'), 320, 280);
         }
         if (state === 'WAIT_MISS') {
             this.ctx.fillStyle = '#f00';
             this.ctx.font = '80px monospace';
             this.ctx.strokeStyle = '#fff'; this.ctx.lineWidth = 4;
-            this.ctx.strokeText("Miss!!", 340, 280);
-            this.ctx.fillText("Miss!!", 340, 280);
+            this.ctx.strokeText(game.t('play.miss'), 340, 280);
+            this.ctx.fillText(game.t('play.miss'), 340, 280);
         }
         if (state === 'WAIT_GAMEOVER' || state === 'GAMEOVER') {
             this.ctx.fillStyle = '#f00';
             this.ctx.font = '80px monospace';
             this.ctx.strokeStyle = '#fff'; this.ctx.lineWidth = 4;
-            this.ctx.strokeText("GAME OVER", 280, 280);
-            this.ctx.fillText("GAME OVER", 280, 280);
+            this.ctx.strokeText(game.t('play.gameOver'), 280, 280);
+            this.ctx.fillText(game.t('play.gameOver'), 280, 280);
         }
 
         if (state === 'WAIT_START') {
@@ -265,8 +266,8 @@ export class Renderer {
             this.ctx.font = '40px monospace';
             this.ctx.textAlign = 'center';
             this.ctx.strokeStyle = '#000'; this.ctx.lineWidth = 4;
-            this.ctx.strokeText("STAGE " + (game.stage + 1), 480, 260); // Outline
-            this.ctx.fillText("STAGE " + (game.stage + 1), 480, 260);
+            this.ctx.strokeText(game.t('play.stage', { number: game.stage + 1 }), 480, 260); // Outline
+            this.ctx.fillText(game.t('play.stage', { number: game.stage + 1 }), 480, 260);
             this.ctx.textAlign = 'start';
         }
     }
@@ -362,19 +363,19 @@ export class Renderer {
 
         // 0: GAME PLAY
         this.ctx.fillStyle = game.titleCursor === 0 ? '#ff0' : '#888';
-        this.ctx.fillText("GAME PLAY", 480, menuBaseY + 45);
+        this.ctx.fillText(game.t('title.menu.gamePlay'), 480, menuBaseY + 45);
 
         // 1: HOW TO PLAY
         this.ctx.fillStyle = game.titleCursor === 1 ? '#ff0' : '#888';
-        this.ctx.fillText("HOW TO PLAY", 480, menuBaseY + 85);
+        this.ctx.fillText(game.t('title.menu.howToPlay'), 480, menuBaseY + 85);
 
         // 2: MAP EDITOR
         this.ctx.fillStyle = game.titleCursor === 2 ? '#ff0' : '#888';
-        this.ctx.fillText("MAP EDITOR", 480, menuBaseY + 125);
+        this.ctx.fillText(game.t('title.menu.mapEditor'), 480, menuBaseY + 125);
 
         // 3: SETTINGS
         this.ctx.fillStyle = game.titleCursor === 3 ? '#ff0' : '#888';
-        this.ctx.fillText("SETTINGS", 480, menuBaseY + 165);
+        this.ctx.fillText(game.t('title.menu.settings'), 480, menuBaseY + 165);
 
         this.ctx.textAlign = 'start'; // Reset for other draws
 
@@ -404,47 +405,42 @@ export class Renderer {
     drawTitleSettings(game) {
         this.drawTitleBackground();
 
-        const menuBaseY = 160;
-        const boxWidth = 600;
-        const boxHeight = 420;
-        const boxX = (this.ctx.canvas.width - boxWidth) / 2;
+        const layout = createSettingsLayout(this.ctx.canvas.width);
+        const { box } = layout;
 
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        this.ctx.fillRect(boxX, menuBaseY, boxWidth, boxHeight);
+        this.ctx.fillRect(box.x, box.y, box.width, box.height);
         this.ctx.strokeStyle = '#444';
         this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(boxX, menuBaseY, boxWidth, boxHeight);
+        this.ctx.strokeRect(box.x, box.y, box.width, box.height);
 
         this.ctx.textAlign = 'center';
         this.ctx.fillStyle = '#fff';
         this.ctx.font = 'bold 32px monospace';
-        this.ctx.fillText("SETTINGS", this.ctx.canvas.width / 2, menuBaseY + 50);
+        this.ctx.fillText(game.t('settings.title'), layout.title.x, layout.title.y);
 
         const items = [
-            { label: "GAME SPEED", val: `${game.targetFPS} FPS`, type: 'slider', min: 30, max: 60, current: game.targetFPS },
-            { label: "PAD TYPE", val: "", type: 'switch', active: game.padType !== 0 },
-            { label: "PAD POS", val: game.padType === 0 ? "" : "DRAG", type: 'info', disabled: game.padType === 0 },
-            { label: "PAD SIZE", val: game.padType === 0 ? "" : `${game.padSize}%`, type: 'slider', min: 50, max: 150, current: game.padSize, disabled: game.padType === 0 },
-            { label: "SCREEN SIZE", val: `${game.tempScreenSize}%`, type: 'slider', min: 50, max: 100, current: game.tempScreenSize },
-            { label: "BACK", type: 'button' }
+            { label: game.t('settings.gameSpeed'), val: `${game.targetFPS} FPS`, type: 'slider', min: 30, max: 60, current: game.targetFPS },
+            { label: game.t('settings.padType'), val: "", type: 'switch', active: game.padType !== 0 },
+            { label: game.t('settings.padPos'), val: game.padType === 0 ? "" : game.t('settings.drag'), type: 'info', disabled: game.padType === 0 },
+            { label: game.t('settings.padSize'), val: game.padType === 0 ? "" : `${game.padSize}%`, type: 'slider', min: 50, max: 150, current: game.padSize, disabled: game.padType === 0 },
+            { label: game.t('settings.screenSize'), val: `${game.tempScreenSize}%`, type: 'slider', min: 50, max: 100, current: game.tempScreenSize },
+            { label: game.t('settings.language'), val: game.getLanguageLabel(), type: 'language' },
+            { label: game.t('common.back'), type: 'button' }
         ];
 
-        const itemYStart = menuBaseY + 100;
-        const itemGap = 55;
-
         items.forEach((item, i) => {
-            const iy = itemYStart + i * itemGap;
+            const iy = layout.getItemY(i);
             const isSelected = (game.settingsCursor === i);
 
             // Item Content Layout
-            const contentX = boxX + 60;
-            const contentW = boxWidth - 120;
+            const contentX = layout.labelX;
 
             // Selection Marker (Simple dot or triangle)
             if (isSelected) {
                 this.ctx.fillStyle = '#ff0';
                 this.ctx.beginPath();
-                this.ctx.arc(contentX - 25, iy, 4, 0, Math.PI * 2);
+                this.ctx.arc(layout.markerX, iy, 4, 0, Math.PI * 2);
                 this.ctx.fill();
             }
 
@@ -458,8 +454,8 @@ export class Renderer {
             this.ctx.textAlign = 'right';
             if (item.type === 'slider') {
                 // Draw Slider Track
-                const trackW = 160;
-                const tx = boxX + boxWidth - 200;
+                const trackW = layout.slider.width;
+                const tx = layout.slider.x;
                 this.ctx.fillStyle = '#222';
                 this.ctx.fillRect(tx, iy - 3, trackW, 6);
 
@@ -483,10 +479,14 @@ export class Renderer {
                 this.ctx.fillText(item.val, tx - 25, iy + 5);
             } else if (item.type === 'switch') {
                 // Segmented Control (3-way selector)
-                const sw = 240;
-                const tx = boxX + boxWidth - 280;
+                const sw = layout.switch.width;
+                const tx = layout.switch.x;
                 const segmentW = sw / 3;
-                const labels = ["NONE", "SINGLE", "DUAL"];
+                const labels = [
+                    game.t('settings.padTypes.none'),
+                    game.t('settings.padTypes.single'),
+                    game.t('settings.padTypes.dual')
+                ];
 
                 labels.forEach((label, j) => {
                     const sx = tx + j * segmentW;
@@ -512,11 +512,24 @@ export class Renderer {
                 this.ctx.textAlign = 'center';
                 this.ctx.fillStyle = isSelected ? '#ff0' : '#fff';
                 this.ctx.font = isSelected ? 'bold 24px monospace' : '22px monospace';
-                this.ctx.fillText("BACK", boxX + boxWidth / 2, iy + 5);
+                this.ctx.fillText(game.t('common.back'), box.x + box.width / 2, iy + 5);
+            } else if (item.type === 'language') {
+                const tx = layout.language.x;
+                const controlW = layout.language.width;
+                this.ctx.fillStyle = isSelected ? '#088' : '#111';
+                this.ctx.fillRect(tx, iy - 16, controlW, 32);
+                this.ctx.strokeStyle = isSelected ? '#ff0' : '#444';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(tx, iy - 16, controlW, 32);
+
+                this.ctx.fillStyle = isSelected ? '#fff' : '#aaa';
+                this.ctx.font = 'bold 16px monospace';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(`< ${item.val} >`, tx + controlW / 2, iy + 5);
             } else {
                 this.ctx.fillStyle = '#666';
                 this.ctx.font = '18px monospace';
-                this.ctx.fillText(item.val, boxX + boxWidth - 40, iy + 5);
+                this.ctx.fillText(item.val, box.x + box.width - 40, iy + 5);
             }
         });
 
@@ -535,7 +548,7 @@ export class Renderer {
         this.ctx.fillStyle = '#fff';
         this.ctx.textAlign = 'center';
         this.ctx.font = '30px monospace';
-        this.ctx.fillText("- HOW TO PLAY -", 480, 40);
+        this.ctx.fillText(game.t('howToPlay.title'), 480, 40);
         this.ctx.strokeStyle = '#333';
         this.ctx.beginPath(); this.ctx.moveTo(0, 60); this.ctx.lineTo(960, 60); this.ctx.stroke();
 
@@ -560,12 +573,12 @@ export class Renderer {
         this.ctx.fillStyle = '#fff';
         this.ctx.font = 'bold 22px monospace';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText("TAP TO BACK", btnX + btnW / 2, btnY + 32);
+        this.ctx.fillText(game.t('howToPlay.tapToBack'), btnX + btnW / 2, btnY + 32);
 
         this.ctx.fillStyle = '#888';
         this.ctx.font = '18px monospace';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText("Scroll to Read More...", 40, btnY + 30);
+        this.ctx.fillText(game.t('howToPlay.scrollMore'), 40, btnY + 30);
 
         // Content Area (Clipped & Scrolled)
         this.ctx.beginPath();
@@ -579,113 +592,58 @@ export class Renderer {
         const x = 100;
         const gap = 30;
 
-        // === PROLOGUE ===
-        this.ctx.fillStyle = '#ddd'; this.ctx.font = '24px monospace';
-        this.ctx.fillText("■ プロローグ", x - 20, y); y += 40;
-        this.ctx.fillStyle = '#ddd'; this.ctx.font = '20px monospace';
-        this.ctx.fillText("魔導師見習いのあなたは、師匠の言いつけで", x, y); y += gap;
-        this.ctx.fillText("「魔力の結晶」を集めることになりました。", x, y); y += gap;
-        this.ctx.fillText("結晶に秘められた力は、大地の記憶そのものを操ります。", x, y); y += gap;
-        this.ctx.fillText("赤と青、ふたつの魔力を使い分け、", x, y); y += gap;
-        this.ctx.fillText("変化し続ける大地を乗り越えましょう。", x, y); y += 50;
+        const drawHeading = (text, color = '#ffcc00', font = '24px monospace') => {
+            this.ctx.fillStyle = color;
+            this.ctx.font = font;
+            this.ctx.fillText(text, x - 20, y);
+            y += 40;
+        };
+        const drawLines = (lines, offsetX = x, color = '#ddd', font = '20px monospace') => {
+            this.ctx.fillStyle = color;
+            this.ctx.font = font;
+            lines.forEach(line => {
+                this.ctx.fillText(line, offsetX, y);
+                y += gap;
+            });
+        };
+        const drawTileEntry = (tileId, namePath, linesPath, nameColor, bottomGap = 40) => {
+            this.ctx.drawImage(this.assets.getTile(tileId), x, y - 25, 40, 40);
+            this.ctx.fillStyle = nameColor;
+            this.ctx.font = '20px monospace';
+            this.ctx.fillText(game.t(namePath), x + 50, y);
+            y += gap;
+            drawLines(game.tr(linesPath), x + 50);
+            y += bottomGap - gap;
+        };
 
-        // === OBJECTIVE ===
-        this.ctx.fillStyle = '#ffcc00'; this.ctx.font = '24px monospace';
-        this.ctx.fillText("■ 目的", x - 20, y); y += 40;
-        this.ctx.fillStyle = '#fff';
-        this.ctx.drawImage(this.assets.getTile(3), x, y - 25, 40, 40); // Portal
-        this.ctx.fillText("ステージ上のすべての結晶を集めた状態で", x + 50, y); y += gap;
-        this.ctx.fillText("「ポータル」に到達すればクリアです。", x + 50, y); y += 50;
+        drawHeading(game.t('howToPlay.prologue.title'), '#ddd');
+        drawLines(game.tr('howToPlay.prologue.lines'));
+        y += 20;
 
-        // === TERRAIN ===
-        this.ctx.fillStyle = '#ffcc00'; this.ctx.font = '24px monospace';
-        this.ctx.fillText("■ 地形", x - 20, y); y += 40;
-
-        // === PORTAL ===
+        drawHeading(game.t('howToPlay.objective.title'));
         this.ctx.drawImage(this.assets.getTile(3), x, y - 25, 40, 40);
-        this.ctx.fillStyle = '#f156f1ff';
-        this.ctx.fillText("ポータル", x + 50, y); y += gap;
-        this.ctx.fillStyle = '#ddd';
-        this.ctx.fillText("ステージの開始地点であり、帰還地点でもある魔法装置です。", x + 50, y); y += gap;
-        this.ctx.fillText("すべてのクリスタルを集めた状態で、", x + 50, y); y += gap;
-        this.ctx.fillText("再びこのポータルに戻ることでステージクリアとなります。", x + 50, y); y += gap;
-        this.ctx.fillText("探索の終わりは、いつも始まりの場所です。", x + 50, y); y += 40;
+        drawLines(game.tr('howToPlay.objective.lines'), x + 50, '#fff');
+        y += 20;
 
-        // === RED CRYSTAL ===
-        this.ctx.drawImage(this.assets.getTile(4), x, y - 25, 40, 40);
-        this.ctx.fillStyle = '#ff8888';
-        this.ctx.fillText("回帰の紅晶", x + 50, y); y += gap;
-        this.ctx.fillStyle = '#ddd';
-        this.ctx.fillText("周囲の「過去の記憶」を呼び戻す魔力が秘められた結晶です。", x + 50, y); y += gap;
-        this.ctx.fillText("取得すると、カウントダウン後に壊れた地形が元に戻ります。", x + 50, y); y += gap;
-        this.ctx.fillText("カウントダウン中に次の回帰の紅晶を取ると、", x + 50, y); y += gap;
-        this.ctx.fillText("地形変化までの時間が【延長】されます。", x + 50, y); y += gap;
-        this.ctx.fillText("取得後、その場所は「土の記憶」へと変化します。", x + 50, y); y += 40;
+        drawHeading(game.t('howToPlay.terrain.title'));
+        drawTileEntry(3, 'howToPlay.terrain.portal.name', 'howToPlay.terrain.portal.lines', '#f156f1ff');
+        drawTileEntry(4, 'howToPlay.terrain.redCrystal.name', 'howToPlay.terrain.redCrystal.lines', '#ff8888');
+        drawTileEntry(5, 'howToPlay.terrain.blueCrystal.name', 'howToPlay.terrain.blueCrystal.lines', '#8888ff');
+        drawTileEntry(1, 'howToPlay.terrain.soil.name', 'howToPlay.terrain.soil.lines', '#ce8059ff');
+        drawTileEntry(2, 'howToPlay.terrain.rock.name', 'howToPlay.terrain.rock.lines', '#aaaaaa');
+        drawTileEntry(6, 'howToPlay.terrain.soilMemory.name', 'howToPlay.terrain.soilMemory.lines', '#cfa07a');
+        drawTileEntry(7, 'howToPlay.terrain.rockMemory.name', 'howToPlay.terrain.rockMemory.lines', '#aaaaaa');
 
-        // === BLUE CRYSTAL ===
-        this.ctx.drawImage(this.assets.getTile(5), x, y - 25, 40, 40);
-        this.ctx.fillStyle = '#8888ff';
-        this.ctx.fillText("固定の蒼晶", x + 50, y); y += gap;
-        this.ctx.fillStyle = '#ddd';
-        this.ctx.fillText("時間変化を拒絶する魔力が秘められた結晶です。", x + 50, y); y += gap;
-        this.ctx.fillText("カウントダウン中に取得すると、", x + 50, y); y += gap;
-        this.ctx.fillText("地形変化までの時間が【クリア】されます。", x + 50, y); y += gap;
-        this.ctx.fillText("取得後、その場所は「岩の記憶」へと変化します。", x + 50, y); y += 40;
-
-
-        // === SOIL ===
-        this.ctx.drawImage(this.assets.getTile(1), x, y - 25, 40, 40);
-        this.ctx.fillStyle = '#ce8059ff';
-        this.ctx.fillText("土", x + 50, y); y += gap;
-        this.ctx.fillStyle = '#ddd';
-        this.ctx.fillText("壊すことができる地形です。", x + 50, y); y += gap;
-        this.ctx.fillText("回帰の紅晶の影響下では、", x + 50, y); y += gap;
-        this.ctx.fillText("カウントダウン後に元の形へ復活します。", x + 50, y); y += 40;
-
-        // === ROCK ===
-        this.ctx.drawImage(this.assets.getTile(2), x, y - 25, 40, 40);
-        this.ctx.fillStyle = '#aaaaaa';
-        this.ctx.fillText("岩", x + 50, y); y += gap;
-        this.ctx.fillStyle = '#ddd';
-        this.ctx.fillText("壊すことができない地形です。", x + 50, y); y += gap;
-        this.ctx.fillText("記憶が完全に固定された、大地の最終形態です。", x + 50, y); y += gap;
-        this.ctx.fillText("一度岩になると、二度と変化しません。", x + 50, y); y += 40;
-
-        // === SOIL MEMORY ===
-        this.ctx.drawImage(this.assets.getTile(6), x, y - 25, 40, 40);
-        this.ctx.fillStyle = '#cfa07a';
-        this.ctx.fillText("土の記憶", x + 50, y); y += gap;
-        this.ctx.fillStyle = '#ddd';
-        this.ctx.fillText("回帰の紅晶の力によって残された地形です。", x + 50, y); y += gap;
-        this.ctx.fillText("カウントダウンが終了すると、", x + 50, y); y += gap;
-        this.ctx.fillText("かつて存在していた「土」として復活します。", x + 50, y); y += gap;
-        this.ctx.fillText("赤の魔力が続く限り、何度でも再生します。", x + 50, y); y += 40;
-
-        // === ROCK MEMORY ===
-        this.ctx.drawImage(this.assets.getTile(7), x, y - 25, 40, 40);
-        this.ctx.fillStyle = '#aaaaaa';
-        this.ctx.fillText("岩の記憶", x + 50, y); y += gap;
-        this.ctx.fillStyle = '#ddd';
-        this.ctx.fillText("固定の蒼晶の力によって変質した地形です。", x + 50, y); y += gap;
-        this.ctx.fillText("時間の流れが完全に固定されています。", x + 50, y); y += gap;
-        this.ctx.fillText("この地形は二度と変化せず、", x + 50, y); y += gap;
-        this.ctx.fillText("破壊も再生も起こりません。", x + 50, y); y += 40;
-
-        // === LIFE ===
-        this.ctx.fillStyle = '#ffcc00'; this.ctx.font = '24px monospace';
-        this.ctx.fillText("■ ライフ", x - 20, y); y += 40;
-
+        drawHeading(game.t('howToPlay.life.title'));
         this.ctx.drawImage(this.assets.player.life, x, y - 25, 40, 40);
         this.ctx.fillStyle = '#fff';
-        this.ctx.fillText("ライフの仕組み", x + 50, y); y += gap;
+        this.ctx.font = '20px monospace';
+        this.ctx.fillText(game.t('howToPlay.life.name'), x + 50, y);
+        y += gap;
+        drawLines(game.tr('howToPlay.life.lines'), x + 50);
+        y += 20;
 
-        this.ctx.fillStyle = '#ddd'; this.ctx.font = '20px monospace';
-        this.ctx.fillText("初期ライフは3で、0になるとゲームオーバーです。", x + 50, y); y += gap;
-        this.ctx.fillText("ステージをクリアするたびにライフが1つ増えます。（最大9）", x + 50, y); y += 50;
-
-        // === CONTROLS ===
-        this.ctx.fillStyle = '#ffcc00'; this.ctx.font = 'bold 26px monospace';
-        this.ctx.fillText("■ 操作方法", x - 20, y); y += 45;
+        drawHeading(game.t('howToPlay.controls.title'), '#ffcc00', 'bold 26px monospace');
 
         // Table Constants
         const tableX = 40;
@@ -703,7 +661,7 @@ export class Renderer {
         this.ctx.fillStyle = '#aaa';
         this.ctx.font = 'bold 18px monospace';
         this.ctx.textAlign = 'center';
-        const headers = ["操作項目", "WASD / 矢印", "テンキー", "ソフトパッド", "Gamepad"];
+        const headers = game.tr('howToPlay.controls.headers');
         let curX = tableX;
         for (let i = 0; i < headers.length; i++) {
             this.ctx.fillText(headers[i], curX + colW[i] / 2, y + 32);
@@ -715,14 +673,7 @@ export class Renderer {
         y += rowH;
 
         // Data Rows
-        const rows = [
-            ["左右移動", "A / D / ← / →", "4 / 6", "◀ / ▶", "Stick / 十字L/R"],
-            ["ジャンプ※1", "W / ↑", "8", "▲", "十字上"],
-            ["Sジャンプ※2", "Q / E", "7 / 9", "↖ / ↗", "L1 / R1"],
-            ["向き反転", "S / ↓", "2 / 5", "▼", "十字下"],
-            ["穴掘り", "Space / Z", "1", "A", "A"],
-            ["リタイア※3", "X / (長押し)", "3 / (長押し)", "B / (長押し)", "B / (長押し)"]
-        ];
+        const rows = game.tr('howToPlay.controls.rows');
 
         // Row Icon Helper
         const drawIconBox = (ctx, bx, by, bw, bh, text, style) => {
@@ -829,9 +780,11 @@ export class Renderer {
         this.ctx.textAlign = 'left';
         this.ctx.fillStyle = '#aaa';
         this.ctx.font = '16px monospace';
-        this.ctx.fillText("※1 ジャンプ         : 向いている方向にジャンプします。", tableX, y); y += 22;
-        this.ctx.fillText("※2 スマートジャンプ : 指定した方向にジャンプします。", tableX, y); y += 22;
-        this.ctx.fillText("※3 リタイア         : ライフを1つ失い、ステージをやり直します。", tableX, y); y += 40;
+        game.tr('howToPlay.controls.footnotes').forEach(line => {
+            this.ctx.fillText(line, tableX, y);
+            y += 22;
+        });
+        y += 18;
 
         this.ctx.restore();
     }
@@ -840,7 +793,7 @@ export class Renderer {
         this.ctx.fillStyle = '#fff';
         this.ctx.font = '30px monospace';
 
-        const modeStr = (game.selectMode === 'PLAY') ? "SELECT STAGE" : "SELECT STAGE (EDITOR)";
+        const modeStr = (game.selectMode === 'PLAY') ? game.t('select.stage') : game.t('select.stageEditor');
         this.ctx.fillText(modeStr, 280, 40);
 
         if (game.selectMode === 'PLAY') {
@@ -890,7 +843,7 @@ export class Renderer {
         this.ctx.fillStyle = '#fff';
         this.ctx.font = 'bold 20px monospace';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText("X (B) BACK ●", btnX + btnW / 2, btnY + 32);
+        this.ctx.fillText(game.t('play.back'), btnX + btnW / 2, btnY + 32);
         this.ctx.textAlign = 'left';
 
         const startX = 60;
@@ -919,7 +872,7 @@ export class Renderer {
                 this.ctx.font = '14px monospace';
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
-                this.ctx.fillText("CLEAR", dx + 36, dy + 20);
+                this.ctx.fillText(game.t('select.clear'), dx + 36, dy + 20);
                 this.ctx.textAlign = 'start';
                 this.ctx.textBaseline = 'alphabetic';
             }

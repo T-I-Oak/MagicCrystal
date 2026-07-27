@@ -1,5 +1,8 @@
 import { Assets } from './Assets.js';
 import { Game } from './Game.js';
+import { setupLanguageSelector } from '../../GameWorksOAK/src/lib/core/i18n.js';
+import { SUPPORTED_LANGUAGES } from './i18nText.js';
+import { createSettingsLayout, isSettingsSliderHit } from './settingsLayout.js';
 
 window.onload = async () => {
     const assets = new Assets();
@@ -11,6 +14,7 @@ window.onload = async () => {
         return;
     }
 
+    setupLanguageSelector('#language-selector', SUPPORTED_LANGUAGES);
     const game = new Game(canvas, assets);
 
     // Basic Scaling Logic
@@ -210,29 +214,23 @@ window.onload = async () => {
 
         // SETTINGS menu
         if (game.state === 'SETTINGS') {
-            const menuBaseY = 160;
-            const boxWidth = 600;
-            const boxX = (canvas.width - boxWidth) / 2;
-            const itemYStart = menuBaseY + 100;
-            const itemGap = 55;
-
-            if (x < boxX || x > boxX + boxWidth || y < menuBaseY || y > menuBaseY + 420) return;
-
-            const index = Math.floor((y - (itemYStart - 25)) / itemGap);
-            if (index < 0 || index > 5) return;
+            const layout = createSettingsLayout(canvas.width);
+            const index = layout.getItemIndexAt(x, y);
+            if (index < 0 || index > 6) return;
 
             game.settingsCursor = index;
 
             // Handle Interaction
             if (index === 0 || index === 4 || (index === 3 && game.padType !== 0)) {
+                if (!isSettingsSliderHit(layout, x)) return;
                 // Slider Interaction
                 isMoving = true;
                 game.input.isPointerDown = true;
                 updateSliderValue(index, x);
             } else if (index === 1) {
                 // Segmented Control Interaction
-                const sw = 240;
-                const tx = boxX + boxWidth - 280;
+                const sw = layout.switch.width;
+                const tx = layout.switch.x;
                 if (x >= tx && x <= tx + sw) {
                     const segmentIndex = Math.floor((x - tx) / (sw / 3));
                     game.padType = segmentIndex;
@@ -245,6 +243,12 @@ window.onload = async () => {
                     game.saveSettings();
                 }
             } else if (index === 5) {
+                const tx = layout.language.x;
+                if (x >= tx && x <= tx + layout.language.width) {
+                    const midpoint = tx + layout.language.width / 2;
+                    game.changeLanguage(x < midpoint ? -1 : 1);
+                }
+            } else if (index === 6) {
                 // BACK
                 game.input.setVirtualKey('Enter', true);
                 setTimeout(() => game.input.setVirtualKey('Enter', false), 50);
@@ -278,10 +282,9 @@ window.onload = async () => {
     };
 
     const updateSliderValue = (index, x) => {
-        const boxWidth = 600;
-        const boxX = (canvas.width - boxWidth) / 2;
-        const tx = boxX + boxWidth - 200;
-        const trackW = 160;
+        const layout = createSettingsLayout(canvas.width);
+        const tx = layout.slider.x;
+        const trackW = layout.slider.width;
         let ratio = (x - tx) / trackW;
         ratio = Math.max(0, Math.min(1, ratio));
 

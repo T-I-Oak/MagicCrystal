@@ -13,6 +13,9 @@ Magic Crystal はフレーム単位の挙動で成立するパズルゲームで
     - プレイ中の入力タイミングや物理挙動に影響しない範囲で修正する。
 
 ### アプリ機能
+- [ ] copyright 表記を GravityFreight などと同じ表記に統一する
+    - `© T.I.OAK 2026 | GameWorks OAK` のように、GameWorks OAK ポータルへの導線を含める。
+    - 実装時はタイトル画面の表示方法と、canvas 描画内でリンクを扱えない場合の代替 UI を検討する。
 - [ ] マップ解放システム
     - 最初は10マップしか解放されていない
     - 10マップすべてクリアーすると次の10マップが解放される
@@ -54,11 +57,12 @@ Magic Crystal はフレーム単位の挙動で成立するパズルゲームで
     - マイグレーションが必要な保存データは `getSavedData` / `setSavedData` と `migrationMap.init()` を使用する
     - 単純な一時設定や互換データは `getValue` / `setValue` の使用可否を検討する
     - 移行作業ではゲームエンジン部を変更しない
-- [ ] ゲーム内テキストの i18n 対応方針を検討する
+- [ ] ゲーム内テキストの i18n 対応を完了する
     - `project_info.json` は対応済み
-    - ゲーム本体のメニュー、HOW TO PLAY、設定画面を多言語化するかを決める
-    - 対応する場合は GameWorks OAK の `src/lib/core/i18n.js` を相対 import して使用する
-    - 長文説明は `lang-store` とテンプレート描画 API の利用を検討する
+    - タイトルメニュー、設定画面、短い操作ラベル、Settings の言語切り替えは対応済み
+    - GameWorks OAK の `src/lib/core/i18n.js` を相対 import して使用する
+    - HOW TO PLAY の長文本文はオーナー確認後に多言語化する
+    - 長文説明は `lang-store` 形式で定義し、canvas 描画向けに行配列として展開する
 
 ## オーナー検証
 
