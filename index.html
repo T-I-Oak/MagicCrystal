@@ -179,6 +179,98 @@
         @media (hover: hover) and (pointer: fine) {
             /* PC: Optional styling updates if needed */
         }
+
+        #share-confirm-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.65);
+        }
+
+        #share-confirm-overlay.state-hidden,
+        #share-confirm-overlay[hidden] {
+            display: none;
+        }
+
+        .share-confirm-dialog {
+            width: min(520px, calc(100vw - 48px));
+            padding: 28px;
+            border: 3px solid #4e4e6a;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background: rgba(15, 15, 22, 0.97);
+            box-shadow: 0 0 24px rgba(0, 0, 0, 0.65);
+            color: #f4f4f4;
+            text-align: center;
+        }
+
+        .share-confirm-dialog h2 {
+            margin: 0 0 18px;
+            font-size: 28px;
+            line-height: 1.2;
+            color: #ffd600;
+        }
+
+        .share-confirm-dialog p {
+            margin: 0 0 24px;
+            font-size: 17px;
+            line-height: 1.65;
+            white-space: pre-line;
+        }
+
+        .share-confirm-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .share-confirm-actions button {
+            min-width: 150px;
+            padding: 12px 18px;
+            border: 2px solid #777;
+            border-radius: 8px;
+            background: #2d2d2d;
+            color: #fff;
+            font: 700 18px 'Courier New', monospace;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .share-confirm-actions .primary {
+            border-color: #ffd600;
+            color: #ffd600;
+        }
+
+        .share-key-face {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border: 2px solid rgba(190, 190, 255, 0.72);
+            border-radius: 50%;
+            box-sizing: border-box;
+            background: rgba(54, 57, 133, 0.86);
+            color: #fff;
+            font: 700 18px 'Courier New', monospace;
+            line-height: 1;
+            flex: 0 0 auto;
+        }
+
+        .share-key-face.cancel {
+            border-color: rgba(255, 150, 160, 0.72);
+            background: rgba(122, 54, 68, 0.9);
+        }
+
+        .share-button-label {
+            line-height: 1;
+        }
     </style>
 </head>
 
@@ -227,6 +319,18 @@
                 <button class="btn action-a" data-key="z">A</button>
                 <button class="btn d-down" data-key="ArrowDown">▼</button>
                 <button class="btn action-b" data-key="x">B</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="share-confirm-overlay" class="state-hidden" hidden>
+        <div class="share-confirm-dialog">
+            <h2 id="share-confirm-title">MAP SHARE</h2>
+            <p id="share-confirm-message">マップ画像をクリップボードにコピーしました。
+X を開いて貼り付けますか？</p>
+            <div class="share-confirm-actions">
+                <button id="share-confirm-x-btn" class="primary" type="button">OPEN X</button>
+                <button id="share-confirm-close-btn" type="button">CLOSE</button>
             </div>
         </div>
     </div>
