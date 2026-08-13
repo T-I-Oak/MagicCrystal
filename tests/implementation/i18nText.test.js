@@ -80,6 +80,9 @@ describe('MagicCrystal i18n', () => {
         expect(t('howToPlay.terrain.blueCrystal.name')).toBe('Stasis Sapphire');
         expect(t('howToPlay.terrain.soil.name')).toBe('Soil');
         expect(t('howToPlay.terrain.rockMemory.name')).toBe('Rock Memory');
+        expect(t('common.ok')).toBe('OK');
+        expect(t('common.cancel')).toBe('CANCEL');
+        expect(t('common.close')).toBe('CLOSE');
         expect(t('title.menu.extraMap')).toBe('EXTRA MAP');
         expect(t('extraMap.actions.play')).toBe('PLAY');
         expect(t('extraMap.actions.edit')).toBe('EDIT');
@@ -88,10 +91,6 @@ describe('MagicCrystal i18n', () => {
         expect(t('extraMap.actions.share')).toBe('SHARE');
         expect(t('extraMap.actions.delete')).toBe('DELETE');
         expect(t('extraMap.actions.controls')).toBe('HOW TO EDIT');
-        expect(t('extraMap.actions.save')).toBe('SAVE & EXIT');
-        expect(t('extraMap.actions.discard')).toBe('DISCARD & EXIT');
-        expect(t('extraMap.actions.back')).toBe('BACK');
-        expect(t('extraMap.actions.cancel')).toBe('CANCEL');
         expect(t('extraMap.notice.shareRequiresClear')).toBe('Clear the map before sharing');
         expect(t('extraMap.notice.shareFailed')).toBe('Sharing could not be started');
         expect(t('extraMap.notice.favoriteDeleteProtected')).toBe('Favorite maps cannot be deleted');
@@ -111,8 +110,8 @@ describe('MagicCrystal i18n', () => {
         expect(tr('extraMap.deleteConfirm.lines')).toHaveLength(2);
         expect(t('extraMap.deleteConfirm.delete')).toBe('DELETE');
         expect(t('extraMap.deleteConfirm.cancel')).toBe('CANCEL');
-        expect(t('extraMap.editor.title')).toBe('EDIT MENU');
-        expect(t('extraMap.editor.menu')).toBe('MENU');
+        expect(t('extraMap.editor.difficultySettingsTitle')).toBe('DIFFICULTY SETTINGS');
+        expect(t('extraMap.editor.difficulty')).toBe('DIFFICULTY');
         expect(t('extraMap.editor.controls.title')).toBe('- HOW TO EDIT -');
         expect(t('extraMap.editor.controls.close')).toBe('CLOSE');
         expect(tr('extraMap.editor.controls.flowLines')).toHaveLength(4);
@@ -126,6 +125,7 @@ describe('MagicCrystal i18n', () => {
         expect(t('play.back')).toBe('BACK');
         expect(t('play.retire')).toBe('RETIRE');
         expect(tr('extraMap.editor.difficultyDescriptions')).toHaveLength(5);
+        expect(tr('extraMap.editor.difficultyDescriptions').every(line => !line.startsWith('★'))).toBe(true);
     });
 
     it('falls back to English when the shared language is unsupported by this app', () => {

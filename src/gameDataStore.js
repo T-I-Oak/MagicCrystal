@@ -1,5 +1,6 @@
 import { DataManager } from '../../GameWorksOAK/src/lib/core/dataManager.js';
 import { normalizeHeldMaps } from './extraMapData.js';
+import { decodeSharedMap, encodeSharedMap } from './sharedMapCodec.js';
 import { createEmptyStageClearFlags, normalizeStageClearFlags } from './stageUnlock.js';
 
 export const GAME_DATA_ID = 'magic-crystal';
@@ -63,13 +64,42 @@ export class GameDataStore {
         });
 
         return {
-            maps: normalizeHeldMaps(data.maps)
+            maps: normalizeHeldMaps(decodeSavedExtraMaps(data.maps))
         };
     }
 
     saveExtraMaps(extraMaps) {
         this.dataManager.setSavedData(EXTRA_MAPS_KEY, {
-            maps: normalizeHeldMaps(extraMaps.maps)
+            maps: encodeSavedExtraMaps(extraMaps.maps)
         });
     }
+}
+
+function decodeSavedExtraMaps(maps) {
+    if (!Array.isArray(maps)) return [];
+    return maps.map((map) => {
+        if (!map || typeof map !== 'object' || typeof map.mapData !== 'string') return null;
+        try {
+            const decoded = decodeSharedMap(map.mapData);
+            return {
+                stage: decoded.tiles,
+                difficulty: decoded.difficulty,
+                cleared: map.cleared === true,
+                favorite: map.favorite === true
+            };
+        } catch {
+            return null;
+        }
+    });
+}
+
+function encodeSavedExtraMaps(maps) {
+    return normalizeHeldMaps(maps).map((map) => {
+        if (!map) return null;
+        return {
+            mapData: encodeSharedMap(map.stage, map.difficulty),
+            cleared: map.cleared === true,
+            favorite: map.favorite === true
+        };
+    });
 }

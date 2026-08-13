@@ -4,10 +4,28 @@ export const SUPPORTED_LANGUAGES = ['ja', 'en'];
 
 const TEXT = {
     common: {
+        ok: {
+            'lang-store': {
+                ja: 'OK',
+                en: 'OK'
+            }
+        },
+        cancel: {
+            'lang-store': {
+                ja: 'CANCEL',
+                en: 'CANCEL'
+            }
+        },
         back: {
             'lang-store': {
                 ja: 'BACK',
                 en: 'BACK'
+            }
+        },
+        close: {
+            'lang-store': {
+                ja: 'CLOSE',
+                en: 'CLOSE'
             }
         },
         languageNames: {
@@ -115,6 +133,12 @@ const TEXT = {
                     en: 'SHARE'
                 }
             },
+            delete: {
+                'lang-store': {
+                    ja: 'DELETE',
+                    en: 'DELETE'
+                }
+            },
             favorite: {
                 'lang-store': {
                     ja: 'FAVORITE',
@@ -127,44 +151,44 @@ const TEXT = {
                     en: 'UNFAVORITE'
                 }
             },
-            delete: {
-                'lang-store': {
-                    ja: 'DELETE',
-                    en: 'DELETE'
-                }
-            },
             controls: {
                 'lang-store': {
                     ja: 'HOW TO EDIT',
                     en: 'HOW TO EDIT'
                 }
             },
-            save: {
+            help: {
                 'lang-store': {
-                    ja: 'SAVE & EXIT',
-                    en: 'SAVE & EXIT'
+                    ja: 'HELP',
+                    en: 'HELP'
                 }
             },
-            discard: {
+            difficultyShort: {
                 'lang-store': {
-                    ja: 'DISCARD & EXIT',
-                    en: 'DISCARD & EXIT'
+                    ja: 'DIFFICULTY',
+                    en: 'DIFFICULTY'
                 }
             },
-            back: {
+            saveShort: {
                 'lang-store': {
-                    ja: 'BACK',
-                    en: 'BACK'
+                    ja: 'SAVE',
+                    en: 'SAVE'
                 }
             },
-            cancel: {
+            discardShort: {
                 'lang-store': {
-                    ja: 'CANCEL',
-                    en: 'CANCEL'
+                    ja: 'DISCARD',
+                    en: 'DISCARD'
                 }
             }
         },
         notice: {
+            editLocked: {
+                'lang-store': {
+                    ja: '通常マップを10ステージクリアすると使用できます',
+                    en: 'Clear 10 normal stages to unlock editing'
+                }
+            },
             noCopiedStage: {
                 'lang-store': {
                     ja: 'コピー済みステージがありません',
@@ -185,7 +209,7 @@ const TEXT = {
             },
             favoriteDeleteProtected: {
                 'lang-store': {
-                    ja: 'お気に入りのマップは削除できません',
+                    ja: 'お気に入りマップは削除できません',
                     en: 'Favorite maps cannot be deleted'
                 }
             }
@@ -275,7 +299,7 @@ const TEXT = {
                     ],
                     en: [
                         'The map could not be downloaded because there are no empty slots.',
-                        'Delete a map to create an empty slot, then download it again.'
+                        'Create an empty slot, then download it again.'
                     ]
                 }
             },
@@ -300,7 +324,7 @@ const TEXT = {
                         '削除すると元に戻せません。'
                     ],
                     en: [
-                        'This held map will be deleted.',
+                        'Delete this saved map.',
                         'This cannot be undone.'
                     ]
                 }
@@ -319,39 +343,33 @@ const TEXT = {
             }
         },
         editor: {
-            title: {
-                'lang-store': {
-                    ja: 'EDIT MENU',
-                    en: 'EDIT MENU'
-                }
-            },
-            menu: {
-                'lang-store': {
-                    ja: 'MENU',
-                    en: 'MENU'
-                }
-            },
             difficulty: {
                 'lang-store': {
                     ja: 'DIFFICULTY',
                     en: 'DIFFICULTY'
                 }
             },
+            difficultySettingsTitle: {
+                'lang-store': {
+                    ja: 'DIFFICULTY SETTINGS',
+                    en: 'DIFFICULTY SETTINGS'
+                }
+            },
             difficultyDescriptions: {
                 'lang-store': {
                     ja: [
-                        '★: 操作やルート判断がシンプルで、気軽に遊べる難しさ。',
-                        '★★: ルート選択を少し考える必要がある難しさ。',
-                        '★★★: タイミングとルート選択を考える必要がある難しさ。',
-                        '★★★★: 手順の見落としが失敗につながりやすい難しさ。',
-                        '★★★★★: 正確な操作と深い読みが必要な高難度。'
+                        '操作やルート判断がシンプルで、気軽に遊べる難しさ。',
+                        'ルート選択を少し考える必要がある難しさ。',
+                        'タイミングとルート選択を考える必要がある難しさ。',
+                        '手順の見落としが失敗につながりやすい難しさ。',
+                        '正確な操作と深い読みが必要な高難度。'
                     ],
                     en: [
-                        '★: Easy to play, with simple controls and route choices.',
-                        '★★: Requires a little route planning.',
-                        '★★★: Requires timing and route planning.',
-                        '★★★★: Mistakes in the route or order are costly.',
-                        '★★★★★: Very hard, requiring precise control and careful planning.'
+                        'Easy to play, with simple controls and route choices.',
+                        'Requires a little route planning.',
+                        'Requires timing and route planning.',
+                        'Mistakes in the route or order are costly.',
+                        'Very hard, requiring precise control and careful planning.'
                     ]
                 }
             },
@@ -378,15 +396,15 @@ const TEXT = {
                     'lang-store': {
                         ja: [
                             '編集カーソルを動かして、変更したいマスを選びます。',
-                            '地形を選んでから配置すると、そのマスの地形が変わります。',
-                            'フルキーの 0 から 7 の各キーを押すと、地形を選ばずに直接配置できます。',
-                            '編集を終えるときはキャンセルキー短押しで EDIT MENU を開き、保存して終了するか破棄して終了します。'
+                            'スマートキーで HELP / 地形 / DIFFICULTY / SAVE を選びます。',
+                            '地形選択中に決定キーを押すと、そのマスの地形が変わります。',
+                            'フルキーの 0 から 7 の各キーを押すと、地形選択と配置を同時に行えます。'
                         ],
                         en: [
                             'Move the edit cursor to choose the tile you want to change.',
-                            'Choose a terrain, then place it to change the selected tile.',
-                            'Press any full keyboard number key from 0 through 7 to place terrain directly.',
-                            'To finish editing, short-press the Cancel key to open EDIT MENU, then save and exit or discard and exit.'
+                            'Use the Smart keys to choose HELP, terrain, DIFFICULTY, or SAVE.',
+                            'When terrain is selected, press Confirm to change the selected tile.',
+                            'Press any full keyboard number key from 0 through 7 to select and place terrain directly.'
                         ]
                     }
                 },
@@ -394,16 +412,16 @@ const TEXT = {
                     'lang-store': {
                         ja: [
                             ['編集カーソルの移動', '◀ / ▶ / ▲ / ▼', '左 / 右 / 上 / 下移動キーで、変更したいマスを選びます。'],
-                            ['地形の選択', '↖ / ↗', 'スマート左 / 右キーで、配置する地形を切り替えます。'],
-                            ['地形の配置', 'A', '決定キーで、選択中の地形を現在のマスに配置します。'],
-                            ['EDIT MENU を開く', 'B', 'キャンセルキー短押しで、保存や破棄を行う EDIT MENU を開きます。'],
+                            ['機能の選択', '↖ / ↗', 'スマート左 / 右キーで、HELP、地形、DIFFICULTY、SAVE を切り替えます。'],
+                            ['選択機能の実行', 'A', '決定キーで、選択中の地形配置、説明表示、難易度設定、保存を実行します。'],
+                            ['編集の破棄', 'B', 'キャンセルキー長押しで、編集内容を破棄して終了します。'],
                             ['地形の直接配置', '0 / 1 / 2 / 3 / 4 / 5 / 6 / 7', 'Keyboard のフルキー 0 から 7 の各キーで、対応する地形を直接配置できます。']
                         ],
                         en: [
                             ['Move Edit Cursor', '◀ / ▶ / ▲ / ▼', 'Use the left / right / up / down keys to choose the tile to change.'],
-                            ['Select Terrain', '↖ / ↗', 'Use the Smart Left / Right keys to switch the terrain to place.'],
-                            ['Place Terrain', 'A', 'Use the Confirm key to place the selected terrain on the current tile.'],
-                            ['Open EDIT MENU', 'B', 'Short-press the Cancel key to open EDIT MENU for save or discard.'],
+                            ['Select Function', '↖ / ↗', 'Use the Smart Left / Right keys to switch HELP, terrain, DIFFICULTY, or SAVE.'],
+                            ['Run Function', 'A', 'Use the Confirm key to place terrain, show help, set difficulty, or save.'],
+                            ['Discard Edit', 'B', 'Hold the Cancel key to discard changes and exit.'],
                             ['Place Directly', '0 / 1 / 2 / 3 / 4 / 5 / 6 / 7', 'Use any full keyboard number key from 0 through 7 to place the matching terrain directly.']
                         ]
                     }
@@ -412,11 +430,11 @@ const TEXT = {
                     'lang-store': {
                         ja: [
                             '各操作キーが Keyboard / Numpad / Gamepad のどれに対応するかは、HOW TO PLAY の操作キー対応表を参照してください。',
-                            'EDIT MENU 表示中は、上下で項目移動、左右で難易度変更、決定で実行します。'
+                            'DIFFICULTY SETTINGS 表示中は、左右で難易度を変更し、Bで閉じます。'
                         ],
                         en: [
                             'See the Control Key Map in HOW TO PLAY for Keyboard / Numpad / Gamepad mappings.',
-                            'In EDIT MENU, use up/down to move, left/right to change difficulty, and confirm to run.'
+                            'In DIFFICULTY SETTINGS, use left/right to change difficulty, then press B to close.'
                         ]
                     }
                 }

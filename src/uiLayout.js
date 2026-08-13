@@ -139,76 +139,154 @@ export function createSelectStageGridLayout() {
     };
 }
 
-export function createExtraMapActionMenuLayout(anchorRect, itemCount, canvasWidth = 960, canvasHeight = 720) {
-    const itemHeight = 28;
-    const padding = 8;
-    const width = 128;
-    const height = itemCount * itemHeight + padding * 2;
-    const margin = 10;
-    const minY = 56;
-    const maxY = Math.max(minY, canvasHeight - 88 - height);
-    let x = anchorRect.x + anchorRect.width + margin;
-    let y = anchorRect.y - 4;
+function estimateButtonLabelWidth(label, fontSize = 18) {
+    return Array.from(label ?? '').reduce((total, char) => {
+        const codePoint = char.codePointAt(0);
+        const isWide = codePoint > 0x2e80;
+        return total + fontSize * (isWide ? 1 : 0.62);
+    }, 0);
+}
 
-    if (x + width > canvasWidth - margin) {
-        x = anchorRect.x - width - margin;
+function getActionButtonWidth(item, minWidth = 96) {
+    const horizontalPadding = 24;
+    const confirmFaceReserve = 36;
+    const labels = item.labelCandidates?.length ? item.labelCandidates : [item.label];
+    const labelWidth = labels.reduce((max, label) => Math.max(max, estimateButtonLabelWidth(label)), 0);
+    return Math.ceil(Math.max(minWidth, labelWidth + horizontalPadding + confirmFaceReserve));
+}
+
+export function createSelectStageFunctionBarLayout(canvasWidth = 960, canvasHeight = 720, actionItems = []) {
+    const smartSize = 48;
+    const itemHeight = 44;
+    const gap = 8;
+    const y = canvasHeight - 64;
+    const leftX = 24;
+    const back = { x: canvasWidth - 234, y, width: 210, height: itemHeight };
+    const items = (actionItems ?? []).map((item) => ({
+        id: item.id,
+        width: getActionButtonWidth(item, 120)
+    }));
+
+    const availableWidth = back.x - 86 - smartSize - gap * (items.length + 1);
+    const totalWidth = items.reduce((sum, item) => sum + item.width, 0);
+    if (totalWidth > availableWidth) {
+        const minWidth = 120;
+        const shrinkTarget = totalWidth - availableWidth;
+        const shrinkable = items.reduce((sum, item) => sum + Math.max(0, item.width - minWidth), 0);
+        if (shrinkable > 0) {
+            items.forEach((item) => {
+                const share = Math.max(0, item.width - minWidth) / shrinkable;
+                item.width = Math.max(minWidth, Math.floor(item.width - shrinkTarget * share));
+            });
+        }
     }
-    y = Math.min(maxY, Math.max(minY, y));
+
+    let x = 86;
+    const layoutItems = items.map((item) => {
+        const rect = { x, y, width: item.width, height: itemHeight };
+        x += item.width + gap;
+        return { id: item.id, rect };
+    });
+    const maxRight = layoutItems.reduce((max, item) => Math.max(max, item.rect.x + item.rect.width), 86);
+    const smartRightX = Math.min(back.x - gap - smartSize, maxRight + gap);
 
     return {
-        x,
-        y,
-        width,
-        height,
-        itemCount,
-        itemHeight,
-        padding,
-        getItemRect(index) {
-            return {
-                x: this.x + this.padding,
-                y: this.y + this.padding + index * this.itemHeight,
-                width: this.width - this.padding * 2,
-                height: this.itemHeight
-            };
-        },
-        getItemIndexAt(x, y) {
-            for (let index = 0; index < this.itemCount; index++) {
-                const rect = this.getItemRect(index);
-                if (
-                    x >= rect.x &&
-                    x <= rect.x + rect.width &&
-                    y >= rect.y &&
-                    y <= rect.y + rect.height
-                ) {
-                    return index;
-                }
+        smartLeft: { x: leftX, y, width: smartSize, height: smartSize },
+        smartRight: { x: smartRightX, y, width: smartSize, height: smartSize },
+        back,
+        items: layoutItems
+    };
+}
+
+function createFunctionButtonSpecs(actionItems, availableWidth) {
+    const gap = 8;
+    const minWidth = 96;
+    const rowIds = [
+        ['play', 'edit', 'create', 'copy', 'paste'],
+        ['favorite', 'share', 'delete']
+    ];
+    const widthById = new Map((actionItems ?? []).map((item) => {
+        return [item.id, getActionButtonWidth(item, minWidth)];
+    }));
+
+    return rowIds.flatMap((ids, row) => {
+        const rowItems = ids
+            .filter((id) => widthById.has(id))
+            .map((id) => ({ id, width: widthById.get(id) }));
+        const totalGap = Math.max(0, rowItems.length - 1) * gap;
+        const totalWidth = rowItems.reduce((sum, item) => sum + item.width, 0) + totalGap;
+        if (totalWidth > availableWidth) {
+            const shrinkTarget = totalWidth - availableWidth;
+            const shrinkable = rowItems.reduce((sum, item) => sum + Math.max(0, item.width - minWidth), 0);
+            if (shrinkable > 0) {
+                rowItems.forEach((item) => {
+                    const share = Math.max(0, item.width - minWidth) / shrinkable;
+                    item.width = Math.max(minWidth, Math.floor(item.width - shrinkTarget * share));
+                });
             }
-            return -1;
         }
+
+        let x = 86;
+        return rowItems.map((item) => {
+            const spec = { id: item.id, row, x, width: item.width };
+            x += item.width + gap;
+            return spec;
+        });
+    });
+}
+
+export function createExtraMapFunctionBarLayout(canvasWidth = 960, canvasHeight = 720, actionItems = []) {
+    const smartSize = 48;
+    const itemHeight = 44;
+    const gap = 8;
+    const row1Y = canvasHeight - 116;
+    const row2Y = canvasHeight - 64;
+    const leftX = 24;
+    const back = { x: canvasWidth - 234, y: row2Y, width: 210, height: itemHeight };
+    const availableWidth = back.x - 86 - smartSize - gap * 2;
+    const itemSpecs = createFunctionButtonSpecs(actionItems, availableWidth);
+    const maxRight = itemSpecs.reduce((max, spec) => Math.max(max, spec.x + spec.width), 86);
+    const rightX = Math.min(back.x - gap - smartSize, maxRight + gap);
+
+    return {
+        smartLeft: { x: leftX, y: row1Y + Math.round((itemHeight * 2 + gap - smartSize) / 2), width: smartSize, height: smartSize },
+        smartRight: { x: rightX, y: row1Y + Math.round((itemHeight * 2 + gap - smartSize) / 2), width: smartSize, height: smartSize },
+        back,
+        items: itemSpecs.map((spec) => ({
+            id: spec.id,
+            rect: {
+                x: spec.x,
+                y: spec.row === 0 ? row1Y : row2Y,
+                width: spec.width,
+                height: itemHeight
+            }
+        }))
     };
 }
 
 export function createExtraMapDeleteConfirmLayout(canvasWidth = 960, canvasHeight = 720) {
     const box = {
-        x: Math.round(canvasWidth / 2 - 240),
-        y: Math.round(canvasHeight / 2 - 115),
-        width: 480,
-        height: 230
+        x: Math.round((canvasWidth - 560) / 2),
+        y: Math.round((canvasHeight - 260) / 2),
+        width: 560,
+        height: 260
     };
-    const buttonWidth = 180;
-    const buttonHeight = 44;
-    const buttonY = box.y + box.height - 62;
+    const buttonWidth = 210;
+    const buttonHeight = 48;
+    const gap = 20;
+    const buttonY = box.y + box.height - 70;
+    const centerX = box.x + box.width / 2;
 
     return {
         box,
         confirmButton: {
-            x: box.x + 55,
+            x: centerX - buttonWidth - gap / 2,
             y: buttonY,
             width: buttonWidth,
             height: buttonHeight
         },
         cancelButton: {
-            x: box.x + box.width - 55 - buttonWidth,
+            x: centerX + gap / 2,
             y: buttonY,
             width: buttonWidth,
             height: buttonHeight

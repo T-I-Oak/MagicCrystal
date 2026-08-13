@@ -5,6 +5,7 @@ import {
     GameDataStore
 } from '../../src/gameDataStore.js';
 import { HELD_MAP_LIMIT } from '../../src/extraMapData.js';
+import { decodeSharedMap } from '../../src/sharedMapCodec.js';
 
 function installLocalStorageMock() {
     const values = new Map();
@@ -115,6 +116,32 @@ describe('GameDataStore', () => {
             favorite: true
         });
         expect(loaded[1]).toBeNull();
-        expect(JSON.parse(localStorage.getItem(GAME_DATA_ID)).extraMaps.d.maps[0].stage[0][0]).toBe(3);
+        const savedMap = JSON.parse(localStorage.getItem(GAME_DATA_ID)).extraMaps.d.maps[0];
+        expect(savedMap).toMatchObject({
+            cleared: true,
+            favorite: true
+        });
+        expect(savedMap).not.toHaveProperty('stage');
+        expect(decodeSharedMap(savedMap.mapData)).toMatchObject({
+            difficulty: 3,
+            tiles: stage
+        });
+    });
+
+    it('drops old unencoded extra map storage entries', () => {
+        const store = new GameDataStore();
+        const stage = new Array(13).fill(null).map(() => new Array(24).fill(0));
+        stage[0][0] = 3;
+
+        store.dataManager.setSavedData('extraMaps', {
+            maps: [{
+                stage,
+                difficulty: 3,
+                cleared: true,
+                favorite: true
+            }]
+        });
+
+        expect(store.loadExtraMaps().maps).toEqual(new Array(HELD_MAP_LIMIT).fill(null));
     });
 });

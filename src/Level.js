@@ -60,6 +60,11 @@ export class LevelEditor {
     }
 
     update(input) {
+        this.updateCursor(input);
+        this.updatePlacement(input);
+    }
+
+    updateCursor(input) {
         if (this.cooldown > 0) this.cooldown--;
 
         // Movement using stick (includes arrow keys, WASD, and numpad)
@@ -81,13 +86,14 @@ export class LevelEditor {
                 this.cooldown = 5;
             }
         }
+    }
 
+    updatePlacement(input) {
         // Tile Selection & Placement with regular number keys (not numpad)
         for (let i = 0; i <= 7; i++) {
             const digitKey = 'Digit' + i;
             if (input.keys[digitKey]) {
-                this.selectedTile = i;
-                this.placeTile(i); // Immediate Placement
+                this.selectTileAndPlace(i); // Immediate Placement
             }
         }
 
@@ -105,6 +111,11 @@ export class LevelEditor {
         if (input.isJustPressed('smartRight')) {
             this.selectedTile = (this.selectedTile + 1) % 8;
         }
+    }
+
+    selectTileAndPlace(tileId) {
+        this.selectedTile = tileId;
+        this.placeTile(tileId);
     }
 
     placeTile(tileId) {

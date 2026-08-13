@@ -187,7 +187,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(0, 0, 0, 0.72);
         }
 
         #share-confirm-overlay.state-hidden,
@@ -198,27 +198,29 @@
         .share-confirm-dialog {
             width: min(520px, calc(100vw - 48px));
             padding: 28px;
-            border: 3px solid #4e4e6a;
-            border-radius: 8px;
+            border: 2px solid #666;
+            border-radius: 10px;
             box-sizing: border-box;
-            background: rgba(15, 15, 22, 0.97);
+            background: rgba(0, 0, 0, 0.92);
             box-shadow: 0 0 24px rgba(0, 0, 0, 0.65);
-            color: #f4f4f4;
+            color: #ccc;
             text-align: center;
+            font-family: monospace;
         }
 
         .share-confirm-dialog h2 {
             margin: 0 0 18px;
-            font-size: 28px;
+            font: 700 28px monospace;
             line-height: 1.2;
-            color: #ffd600;
+            color: #fff;
         }
 
         .share-confirm-dialog p {
             margin: 0 0 24px;
-            font-size: 17px;
+            font: 18px monospace;
             line-height: 1.65;
             white-space: pre-line;
+            color: #ccc;
         }
 
         .share-confirm-actions {
@@ -230,11 +232,11 @@
         .share-confirm-actions button {
             min-width: 150px;
             padding: 12px 18px;
-            border: 2px solid #777;
-            border-radius: 8px;
-            background: #2d2d2d;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
-            font: 700 18px 'Courier New', monospace;
+            font: 700 20px monospace;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
@@ -243,29 +245,29 @@
         }
 
         .share-confirm-actions .primary {
-            border-color: #ffd600;
-            color: #ffd600;
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
         }
 
         .share-key-face {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 28px;
-            height: 28px;
-            border: 2px solid rgba(190, 190, 255, 0.72);
+            width: 30px;
+            height: 30px;
+            border: 2px solid rgba(120, 120, 255, 0.6);
             border-radius: 50%;
             box-sizing: border-box;
-            background: rgba(54, 57, 133, 0.86);
+            background: rgba(80, 80, 255, 0.3);
             color: #fff;
-            font: 700 18px 'Courier New', monospace;
+            font: 700 20px monospace;
             line-height: 1;
             flex: 0 0 auto;
         }
 
         .share-key-face.cancel {
-            border-color: rgba(255, 150, 160, 0.72);
-            background: rgba(122, 54, 68, 0.9);
+            border-color: rgba(255, 120, 120, 0.6);
+            background: rgba(255, 80, 80, 0.3);
         }
 
         .share-button-label {

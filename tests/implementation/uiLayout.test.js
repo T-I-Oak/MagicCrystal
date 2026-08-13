@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     createBackButtonLayout,
-    createExtraMapActionMenuLayout,
+    createExtraMapDeleteConfirmLayout,
+    createExtraMapFunctionBarLayout,
+    createSelectStageFunctionBarLayout,
     createSelectStageGridLayout,
     createTitleMenuLayout
 } from '../../src/uiLayout.js';
@@ -47,13 +49,81 @@ describe('ui layout', () => {
         expect(playFooter.contains(830, 605)).toBe(false);
     });
 
-    it('keeps extra map action menus inside the canvas and maps item rectangles', () => {
-        const leftMenu = createExtraMapActionMenuLayout({ x: 820, y: 610, width: 100, height: 60 }, 3, 960, 720);
+    it('creates extra map function bar rectangles inside the canvas', () => {
+        const actionItems = [
+            { id: 'play', label: 'PLAY' },
+            { id: 'edit', label: 'EDIT' },
+            { id: 'copy', label: 'COPY' },
+            { id: 'paste', label: 'PASTE' },
+            { id: 'favorite', label: 'FAVORITE', labelCandidates: ['FAVORITE', 'UNFAVORITE'] },
+            { id: 'share', label: 'SHARE' },
+            { id: 'delete', label: 'DELETE' }
+        ];
+        const layout = createExtraMapFunctionBarLayout(960, 720, actionItems);
+        const rects = [layout.smartLeft, layout.smartRight, layout.back, ...layout.items.map(item => item.rect)];
 
-        expect(leftMenu.x + leftMenu.width).toBeLessThanOrEqual(950);
-        expect(leftMenu.y + leftMenu.height).toBeLessThanOrEqual(632);
-        expect(leftMenu.getItemIndexAt(leftMenu.getItemRect(0).x, leftMenu.getItemRect(0).y)).toBe(0);
-        expect(leftMenu.getItemIndexAt(leftMenu.getItemRect(2).x + 10, leftMenu.getItemRect(2).y + 10)).toBe(2);
-        expect(leftMenu.getItemIndexAt(leftMenu.x - 1, leftMenu.y)).toBe(-1);
+        expect(layout.items.map(item => item.id)).toEqual([
+            'play',
+            'edit',
+            'copy',
+            'paste',
+            'favorite',
+            'share',
+            'delete'
+        ]);
+        const paste = layout.items.find(item => item.id === 'paste').rect;
+        const favorite = layout.items.find(item => item.id === 'favorite').rect;
+        const play = layout.items.find(item => item.id === 'play').rect;
+        const share = layout.items.find(item => item.id === 'share').rect;
+        const deleteButton = layout.items.find(item => item.id === 'delete').rect;
+        expect(share.y).toBeGreaterThan(paste.y);
+        expect(layout.smartRight.x).toBeGreaterThan(deleteButton.x + deleteButton.width);
+        expect(layout.smartRight.x + layout.smartRight.width).toBeLessThan(layout.back.x);
+        expect(share.x).toBeGreaterThan(favorite.x + favorite.width);
+        expect(deleteButton.x).toBeGreaterThan(share.x + share.width);
+        expect(favorite.width).toBeGreaterThan(play.width);
+        expect(layout.smartLeft.x).toBe(960 - (layout.back.x + layout.back.width));
+        expect(favorite.width).toBe(createExtraMapFunctionBarLayout(960, 720, [
+            ...actionItems.slice(0, 4),
+            { id: 'favorite', label: 'UNFAVORITE', labelCandidates: ['FAVORITE', 'UNFAVORITE'] },
+            ...actionItems.slice(5)
+        ]).items.find(item => item.id === 'favorite').rect.width);
+        rects.forEach((rect) => {
+            expect(rect.x).toBeGreaterThanOrEqual(0);
+            expect(rect.y).toBeGreaterThanOrEqual(0);
+            expect(rect.x + rect.width).toBeLessThanOrEqual(960);
+            expect(rect.y + rect.height).toBeLessThanOrEqual(720);
+        });
+    });
+
+    it('creates extra map delete confirmation buttons inside the modal', () => {
+        const layout = createExtraMapDeleteConfirmLayout(960, 720);
+
+        expect(layout.confirmButton.y).toBe(layout.cancelButton.y);
+        expect(layout.confirmButton.x + layout.confirmButton.width).toBeLessThan(layout.cancelButton.x);
+        [layout.box, layout.confirmButton, layout.cancelButton].forEach((rect) => {
+            expect(rect.x).toBeGreaterThanOrEqual(0);
+            expect(rect.y).toBeGreaterThanOrEqual(0);
+            expect(rect.x + rect.width).toBeLessThanOrEqual(960);
+            expect(rect.y + rect.height).toBeLessThanOrEqual(720);
+        });
+    });
+
+    it('creates select stage function bar with matched side offsets', () => {
+        const layout = createSelectStageFunctionBarLayout(960, 720, [
+            { id: 'play', label: 'PLAY' },
+            { id: 'settings', label: 'SETTINGS' }
+        ]);
+        const rects = [layout.smartLeft, layout.smartRight, layout.back, ...layout.items.map(item => item.rect)];
+
+        expect(layout.items.map(item => item.id)).toEqual(['play', 'settings']);
+        expect(layout.smartLeft.x).toBe(960 - (layout.back.x + layout.back.width));
+        expect(layout.smartRight.x + layout.smartRight.width).toBeLessThan(layout.back.x);
+        rects.forEach((rect) => {
+            expect(rect.x).toBeGreaterThanOrEqual(0);
+            expect(rect.y).toBeGreaterThanOrEqual(0);
+            expect(rect.x + rect.width).toBeLessThanOrEqual(960);
+            expect(rect.y + rect.height).toBeLessThanOrEqual(720);
+        });
     });
 });

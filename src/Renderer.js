@@ -1,11 +1,17 @@
 import { ALL_LEVELS } from './levels.js';
 import { createSettingsLayout } from './settingsLayout.js';
 import { formatCopyrightText } from './constants.js';
-import { createEditorMenuLayout, createEditorTileGuideLayout } from './editorLayout.js';
+import {
+    createEditorControlsModalLayout,
+    createEditorDifficultyModalLayout,
+    createEditorFunctionBarLayout,
+    createEditorTileGuideLayout
+} from './editorLayout.js';
 import {
     createBackButtonLayout,
-    createExtraMapActionMenuLayout,
     createExtraMapDeleteConfirmLayout,
+    createExtraMapFunctionBarLayout,
+    createSelectStageFunctionBarLayout,
     createSelectStageGridLayout,
     createTitleMenuLayout
 } from './uiLayout.js';
@@ -199,6 +205,13 @@ export class Renderer {
 
                 // Highlight current item
                 const isCurrent = (game.editor.selectedTile === i);
+                if (isCurrent) {
+                    this.ctx.fillStyle = 'rgba(255, 255, 0, 0.08)';
+                    this.ctx.fillRect(gx - 5, gy - 2, tileGuideLayout.itemWidth - 10, tileGuideLayout.itemHeight);
+                    this.ctx.strokeStyle = '#ff0';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.strokeRect(gx - 5, gy - 2, tileGuideLayout.itemWidth - 10, tileGuideLayout.itemHeight);
+                }
 
                 // Draw tile icon
                 this.ctx.drawImage(this.assets.getTile(i), gx, gy, tileGuideLayout.iconSize, tileGuideLayout.iconSize);
@@ -241,46 +254,42 @@ export class Renderer {
         // Retire Button (Right side of Footer)
         const backButton = createBackButtonLayout(this.ctx.canvas.height, 'playFooter');
 
-        // Button Background
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        this.ctx.beginPath();
-        this.ctx.roundRect(backButton.x, backButton.y, backButton.width, backButton.height, 8);
-        this.ctx.fill();
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        this.ctx.stroke();
+        if (state === 'EDITOR' && game.isEditingExtraMap()) {
+            this.drawExtraMapEditorFunctionBar(game);
+        } else {
 
-        // Button Progress (Long Press)
-        if (game.giveUpTimer > 0) {
-            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
-            const fillW = (backButton.width * game.giveUpTimer) / game.giveUpMax;
+            // Button Background
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
             this.ctx.beginPath();
-            this.ctx.roundRect(backButton.x, backButton.y, fillW, backButton.height, 8);
+            this.ctx.roundRect(backButton.x, backButton.y, backButton.width, backButton.height, 8);
             this.ctx.fill();
-        }
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.stroke();
 
-        if (state === 'EDITOR') {
-            if (game.isEditingExtraMap()) {
-                this.drawSoftPadButtonLabel(
-                    backButton.x + backButton.width / 2,
-                    backButton.y + backButton.height / 2,
-                    'B',
-                    game.t('extraMap.editor.menu')
-                );
-            } else {
+            // Button Progress (Long Press)
+            if (game.giveUpTimer > 0) {
+                this.ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+                const fillW = (backButton.width * game.giveUpTimer) / game.giveUpMax;
+                this.ctx.beginPath();
+                this.ctx.roundRect(backButton.x, backButton.y, fillW, backButton.height, 8);
+                this.ctx.fill();
+            }
+
+            if (state === 'EDITOR') {
                 this.drawSoftPadHoldButtonLabel(
                     backButton.x + backButton.width / 2,
                     backButton.y + backButton.height / 2,
                     'B',
                     game.t('common.back')
                 );
+            } else {
+                this.drawSoftPadHoldButtonLabel(
+                    backButton.x + backButton.width / 2,
+                    backButton.y + backButton.height / 2,
+                    'B',
+                    game.t('play.retire')
+                );
             }
-        } else {
-            this.drawSoftPadHoldButtonLabel(
-                backButton.x + backButton.width / 2,
-                backButton.y + backButton.height / 2,
-                'B',
-                game.t('play.retire')
-            );
         }
         this.ctx.textAlign = 'left';
 
@@ -318,8 +327,11 @@ export class Renderer {
             this.ctx.textAlign = 'start';
         }
 
-        if (state === 'EDITOR' && game.isEditingExtraMap() && game.extraMapEditorSession.menuOpen) {
-            this.drawExtraMapEditorMenu(game);
+        if (state === 'EDITOR' && game.isEditingExtraMap() && game.extraMapEditorSession.controlsOpen) {
+            this.drawExtraMapEditorControls(game);
+        }
+        if (state === 'EDITOR' && game.isEditingExtraMap() && game.extraMapEditorSession.difficultyOpen) {
+            this.drawExtraMapEditorDifficultyModal(game);
         }
     }
 
@@ -401,8 +413,19 @@ export class Renderer {
         }
     }
 
+    drawTitleLogo() {
+        if (!this.assets.logo) return;
+
+        const width = 640;
+        const height = width * (this.assets.logo.height / this.assets.logo.width);
+        const x = (this.ctx.canvas.width - width) / 2;
+        const y = 74;
+        this.ctx.drawImage(this.assets.logo, x, y, width, height);
+    }
+
     drawTitleMain(game) {
         this.drawTitleBackground();
+        this.drawTitleLogo();
 
         // Draw Menu Items (Overlay)
         // Add semi-transparent box for readability
@@ -410,7 +433,10 @@ export class Renderer {
         const menuLayout = createTitleMenuLayout();
 
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(menuLayout.box.x, menuLayout.box.y, menuLayout.box.width, menuLayout.box.height);
+        this.roundRect(menuLayout.box.x, menuLayout.box.y, menuLayout.box.width, menuLayout.box.height, 10, true, false);
+        this.ctx.strokeStyle = '#666';
+        this.ctx.lineWidth = 2;
+        this.roundRect(menuLayout.box.x, menuLayout.box.y, menuLayout.box.width, menuLayout.box.height, 10, false, true);
 
         this.ctx.textAlign = 'center'; // Center text properly
 
@@ -497,13 +523,58 @@ export class Renderer {
             }
         }
 
-        const backButton = createBackButtonLayout(this.ctx.canvas.height);
-        this.drawSoftPadCommandButton(backButton, 'B', game.t('common.back'), 22);
-
-        this.drawExtraMapActionMenu(game, gridLayout);
+        this.drawExtraMapFunctionBar(game);
         this.drawNotice(game);
+        this.drawExtraMapDeleteConfirmModal(game);
         this.drawExtraMapDownloadFullModal(game);
-        this.drawExtraMapDeleteConfirm(game);
+        this.ctx.restore();
+    }
+
+    drawExtraMapFunctionBar(game) {
+        const items = game.getExtraMapActionItems();
+        const layout = createExtraMapFunctionBarLayout(this.ctx.canvas.width, this.ctx.canvas.height, items);
+
+        this.ctx.save();
+        this.ctx.fillStyle = '#111';
+        this.ctx.fillRect(0, layout.items[0].rect.y - 10, this.ctx.canvas.width, this.ctx.canvas.height - layout.items[0].rect.y + 10);
+
+        this.drawControlIconBox(layout.smartLeft.x, layout.smartLeft.y, layout.smartLeft.width, layout.smartLeft.height, '↖', 'smart');
+        this.drawControlIconBox(layout.smartRight.x, layout.smartRight.y, layout.smartRight.width, layout.smartRight.height, '↗', 'smart');
+
+        layout.items.forEach((layoutItem, index) => {
+            const item = items[index];
+            if (!item) return;
+            this.drawExtraMapFunctionButton(layoutItem.rect, item, index === game.extraMapFunctionCursor);
+        });
+
+        this.drawSoftPadCommandButton(layout.back, 'B', game.t('common.back'), 22);
+        this.ctx.restore();
+    }
+
+    drawExtraMapFunctionButton(rect, item, selected) {
+        this.ctx.save();
+        this.ctx.fillStyle = item.enabled
+            ? (selected ? '#0a5b86' : 'rgba(255, 255, 255, 0.08)')
+            : 'rgba(255, 255, 255, 0.035)';
+        this.ctx.strokeStyle = selected ? '#ff0' : (item.enabled ? 'rgba(255, 255, 255, 0.24)' : 'rgba(255, 255, 255, 0.12)');
+        this.ctx.lineWidth = selected ? 3 : 2;
+        this.ctx.beginPath();
+        this.ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 8);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        let textX = rect.x + 12;
+        const centerY = rect.y + rect.height / 2;
+        if (selected && item.enabled) {
+            this.drawControlIconBox(textX, centerY - 14, 28, 28, 'A', 'circle-a');
+            textX += 36;
+        }
+
+        this.ctx.fillStyle = item.enabled ? '#fff' : '#666';
+        this.ctx.font = selected && item.enabled ? 'bold 18px monospace' : '18px monospace';
+        this.ctx.textAlign = 'left';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(item.label, textX, centerY + 1);
         this.ctx.restore();
     }
 
@@ -528,11 +599,59 @@ export class Renderer {
         this.ctx.restore();
     }
 
-    drawSharedMapLoadError(game) {
+    drawActionModal({
+        backgroundFill = 'rgba(0, 0, 0, 0.72)',
+        panelFill = 'rgba(0, 0, 0, 0.92)',
+        box,
+        title,
+        titleOffsetY = 56,
+        titleFont = 'bold 28px monospace',
+        lines = [],
+        lineStartOffsetY = 112,
+        lineGap = 28,
+        lineFont = '18px monospace',
+        lineColor = '#ccc',
+        buttons = []
+    }) {
         this.ctx.save();
-        this.ctx.fillStyle = '#111';
-        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        if (backgroundFill) {
+            this.ctx.fillStyle = backgroundFill;
+            this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        }
 
+        this.ctx.fillStyle = panelFill;
+        this.roundRect(box.x, box.y, box.width, box.height, 10, true, false);
+        this.ctx.strokeStyle = '#666';
+        this.ctx.lineWidth = 2;
+        this.roundRect(box.x, box.y, box.width, box.height, 10, false, true);
+
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = titleFont;
+        this.ctx.fillText(title, box.x + box.width / 2, box.y + titleOffsetY);
+
+        this.ctx.fillStyle = lineColor;
+        this.ctx.font = lineFont;
+        lines.forEach((line, index) => {
+            this.ctx.fillText(line, box.x + box.width / 2, box.y + lineStartOffsetY + index * lineGap);
+        });
+
+        this.drawModalActionButtons(buttons);
+        this.ctx.restore();
+    }
+
+    drawModalActionButtons(buttons = []) {
+        buttons.forEach(({ rect, button, label, fontSize = 20, selected = false }) => {
+            if (selected) {
+                this.drawSelectableSoftPadCommandButton(rect, button, label, true, fontSize);
+            } else {
+                this.drawSoftPadCommandButton(rect, button, label, fontSize);
+            }
+        });
+    }
+
+    drawSharedMapLoadError(game) {
         const box = {
             x: 180,
             y: 185,
@@ -540,39 +659,29 @@ export class Renderer {
             height: 270
         };
 
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-        this.roundRect(box.x, box.y, box.width, box.height, 10, true, false);
-        this.ctx.strokeStyle = '#666';
-        this.ctx.lineWidth = 2;
-        this.roundRect(box.x, box.y, box.width, box.height, 10, false, true);
-
-        this.ctx.textAlign = 'center';
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = 'bold 30px monospace';
-        this.ctx.fillText(game.t('extraMap.loadError.title'), box.x + box.width / 2, box.y + 70);
-
-        this.ctx.fillStyle = '#ccc';
-        this.ctx.font = '18px monospace';
-        game.tr('extraMap.loadError.lines').forEach((line, index) => {
-            this.ctx.fillText(line, box.x + box.width / 2, box.y + 118 + index * 28);
+        this.drawActionModal({
+            backgroundFill: '#111',
+            panelFill: 'rgba(0, 0, 0, 0.9)',
+            box,
+            title: game.t('extraMap.loadError.title'),
+            titleOffsetY: 70,
+            lines: game.tr('extraMap.loadError.lines'),
+            lineStartOffsetY: 118,
+            buttons: [{
+                rect: {
+                    x: box.x + box.width / 2 - 120,
+                    y: box.y + box.height - 70,
+                    width: 240,
+                    height: 48
+                },
+                button: 'B',
+                label: game.t('extraMap.loadError.close')
+            }]
         });
-
-        this.drawSoftPadCommandButton({
-            x: box.x + box.width / 2 - 120,
-            y: box.y + box.height - 70,
-            width: 240,
-            height: 48
-        }, 'B', game.t('extraMap.loadError.close'), 20);
-
-        this.ctx.restore();
     }
 
     drawExtraMapDownloadFullModal(game) {
         if (!game.extraMapDownloadFullModalOpen) return;
-
-        this.ctx.save();
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
-        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
         const box = {
             x: 160,
@@ -581,104 +690,47 @@ export class Renderer {
             height: 280
         };
 
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.94)';
-        this.roundRect(box.x, box.y, box.width, box.height, 10, true, false);
-        this.ctx.strokeStyle = '#666';
-        this.ctx.lineWidth = 2;
-        this.roundRect(box.x, box.y, box.width, box.height, 10, false, true);
-
-        this.ctx.textAlign = 'center';
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = 'bold 28px monospace';
-        this.ctx.fillText(game.t('extraMap.downloadFull.title'), box.x + box.width / 2, box.y + 62);
-
-        this.ctx.fillStyle = '#ccc';
-        this.ctx.font = '18px monospace';
-        game.tr('extraMap.downloadFull.lines').forEach((line, index) => {
-            this.ctx.fillText(line, box.x + box.width / 2, box.y + 116 + index * 28);
+        this.drawActionModal({
+            panelFill: 'rgba(0, 0, 0, 0.94)',
+            box,
+            title: game.t('extraMap.downloadFull.title'),
+            titleOffsetY: 62,
+            lines: game.tr('extraMap.downloadFull.lines'),
+            lineStartOffsetY: 116,
+            buttons: [{
+                rect: {
+                    x: box.x + box.width / 2 - 120,
+                    y: box.y + box.height - 70,
+                    width: 240,
+                    height: 48
+                },
+                button: 'B',
+                label: game.t('extraMap.downloadFull.close')
+            }]
         });
-
-        this.drawSoftPadCommandButton({
-            x: box.x + box.width / 2 - 120,
-            y: box.y + box.height - 70,
-            width: 240,
-            height: 48
-        }, 'B', game.t('extraMap.downloadFull.close'), 20);
-
-        this.ctx.restore();
     }
 
-    drawExtraMapDeleteConfirm(game) {
+    drawExtraMapDeleteConfirmModal(game) {
         if (!game.extraMapDeleteConfirm) return;
 
-        this.ctx.save();
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
-        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-
         const layout = createExtraMapDeleteConfirmLayout(this.ctx.canvas.width, this.ctx.canvas.height);
-        const { box } = layout;
-        this.ctx.fillStyle = 'rgba(16, 16, 16, 0.96)';
-        this.ctx.strokeStyle = '#666';
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.roundRect(box.x, box.y, box.width, box.height, 10);
-        this.ctx.fill();
-        this.ctx.stroke();
-
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = '28px monospace';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(game.t('extraMap.deleteConfirm.title'), box.x + box.width / 2, box.y + 54);
-
-        this.ctx.fillStyle = '#ccc';
-        this.ctx.font = '18px monospace';
-        game.tr('extraMap.deleteConfirm.lines').forEach((line, index) => {
-            this.ctx.fillText(line, box.x + box.width / 2, box.y + 96 + index * 28);
+        this.drawActionModal({
+            box: layout.box,
+            title: game.t('extraMap.deleteConfirm.title'),
+            lines: game.tr('extraMap.deleteConfirm.lines'),
+            buttons: [
+                {
+                    rect: layout.confirmButton,
+                    button: 'A',
+                    label: game.t('extraMap.deleteConfirm.delete')
+                },
+                {
+                    rect: layout.cancelButton,
+                    button: 'B',
+                    label: game.t('extraMap.deleteConfirm.cancel')
+                }
+            ]
         });
-
-        this.drawSoftPadCommandButton(layout.confirmButton, 'A', game.t('extraMap.deleteConfirm.delete'), 18);
-        this.drawSoftPadCommandButton(layout.cancelButton, 'B', game.t('extraMap.deleteConfirm.cancel'), 18);
-
-        this.ctx.restore();
-    }
-
-    drawExtraMapActionMenu(game, gridLayout) {
-        if (!game.extraMapActionMenu) return;
-
-        const items = game.getExtraMapActionItems();
-        const menu = createExtraMapActionMenuLayout(
-            gridLayout.getItemHitRect(game.extraMapActionMenu.slotIndex),
-            items.length,
-            this.ctx.canvas.width,
-            this.ctx.canvas.height
-        );
-
-        this.ctx.save();
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-        this.ctx.fillRect(menu.x, menu.y, menu.width, menu.height);
-        this.ctx.strokeStyle = '#666';
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(menu.x, menu.y, menu.width, menu.height);
-
-        this.ctx.font = '14px monospace';
-        this.ctx.textAlign = 'left';
-        this.ctx.textBaseline = 'middle';
-        items.forEach((item, index) => {
-            const rect = menu.getItemRect(index);
-            const selected = index === game.extraMapActionMenu.cursor;
-            if (selected) {
-                this.ctx.fillStyle = item.enabled ? '#333300' : '#202020';
-                this.ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-                this.ctx.strokeStyle = item.enabled ? '#ff0' : '#555';
-                this.ctx.lineWidth = 1;
-                this.ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
-            }
-
-            this.ctx.fillStyle = item.enabled ? '#fff' : '#666';
-            this.ctx.fillText(item.label, rect.x + 8, rect.y + rect.height / 2);
-        });
-        this.ctx.textBaseline = 'alphabetic';
-        this.ctx.restore();
     }
 
     drawFavoriteIcon(x, y) {
@@ -708,7 +760,7 @@ export class Renderer {
         this.ctx.restore();
     }
 
-    drawSmallStar(cx, cy, outerRadius, innerRadius) {
+    drawSmallStar(cx, cy, outerRadius, innerRadius, fillStyle = '#ffcc00', strokeStyle = '#fff1a8') {
         this.ctx.beginPath();
         for (let point = 0; point < 10; point++) {
             const angle = -Math.PI / 2 + point * Math.PI / 5;
@@ -719,38 +771,81 @@ export class Renderer {
             else this.ctx.lineTo(x, y);
         }
         this.ctx.closePath();
-        this.ctx.fillStyle = '#ffcc00';
+        this.ctx.fillStyle = fillStyle;
         this.ctx.fill();
-        this.ctx.strokeStyle = '#fff1a8';
+        this.ctx.strokeStyle = strokeStyle;
         this.ctx.lineWidth = 0.8;
         this.ctx.stroke();
     }
 
+    drawSettingsModalFrame(box, titlePoint, title) {
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        this.roundRect(box.x, box.y, box.width, box.height, 10, true, false);
+        this.ctx.strokeStyle = '#666';
+        this.ctx.lineWidth = 2;
+        this.roundRect(box.x, box.y, box.width, box.height, 10, false, true);
+
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'alphabetic';
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = 'bold 32px monospace';
+        this.ctx.fillText(title, titlePoint.x, titlePoint.y);
+    }
+
+    drawSettingsSelectionMarker(x, y, selected) {
+        if (!selected) return;
+
+        this.ctx.fillStyle = '#ff0';
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 4, 0, Math.PI * 2);
+        this.ctx.fill();
+    }
+
+    drawSettingsItemLabel(label, x, y, selected, disabled = false) {
+        this.ctx.textAlign = 'left';
+        this.ctx.textBaseline = 'alphabetic';
+        this.ctx.fillStyle = disabled ? '#444' : (selected ? '#ff0' : '#888');
+        this.ctx.font = selected ? 'bold 20px monospace' : '18px monospace';
+        this.ctx.fillText(label, x, y + 5);
+    }
+
+    drawSettingsChoiceFrame(rect, selected) {
+        this.ctx.fillStyle = selected ? '#088' : '#111';
+        this.ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        this.ctx.strokeStyle = selected ? '#ff0' : '#444';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    }
+
+    drawSettingsChoiceText(rect, value, selected) {
+        this.drawSettingsChoiceFrame(rect, selected);
+        this.ctx.fillStyle = selected ? '#fff' : '#aaa';
+        this.ctx.font = 'bold 16px monospace';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'alphabetic';
+        this.ctx.fillText(`< ${value} >`, rect.x + rect.width / 2, rect.y + rect.height / 2 + 6);
+    }
+
     drawTitleSettings(game) {
-        this.drawTitleBackground();
+        if (game.settingsReturnState === 'SELECT') {
+            this.drawSelect(game);
+        } else {
+            this.drawTitleBackground();
+            this.drawTitleLogo();
+        }
 
         const layout = createSettingsLayout(this.ctx.canvas.width);
         const { box } = layout;
 
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        this.ctx.fillRect(box.x, box.y, box.width, box.height);
-        this.ctx.strokeStyle = '#444';
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-        this.ctx.textAlign = 'center';
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = 'bold 32px monospace';
-        this.ctx.fillText(game.t('settings.title'), layout.title.x, layout.title.y);
+        this.drawSettingsModalFrame(box, layout.title, game.t('settings.title'));
 
         const items = [
-            { label: game.t('settings.gameSpeed'), val: `${game.targetFPS} FPS`, type: 'slider', min: 30, max: 60, current: game.targetFPS },
+            { label: game.t('settings.gameSpeed'), val: `${game.targetFPS} FPS`, type: 'slider', min: 10, max: 60, current: game.targetFPS },
             { label: game.t('settings.padType'), val: "", type: 'switch', active: game.padType !== 0 },
             { label: game.t('settings.padPos'), val: game.padType === 0 ? "" : game.t('settings.drag'), type: 'info', disabled: game.padType === 0 },
             { label: game.t('settings.padSize'), val: game.padType === 0 ? "" : `${game.padSize}%`, type: 'slider', min: 50, max: 150, current: game.padSize, disabled: game.padType === 0 },
             { label: game.t('settings.screenSize'), val: `${game.tempScreenSize}%`, type: 'slider', min: 50, max: 100, current: game.tempScreenSize },
-            { label: game.t('settings.language'), val: game.getLanguageLabel(), type: 'language' },
-            { label: game.t('common.back'), type: 'button' }
+            { label: game.t('settings.language'), val: game.getLanguageLabel(), type: 'language' }
         ];
 
         items.forEach((item, i) => {
@@ -760,19 +855,10 @@ export class Renderer {
             // Item Content Layout
             const contentX = layout.labelX;
 
-            // Selection Marker (Simple dot or triangle)
-            if (isSelected) {
-                this.ctx.fillStyle = '#ff0';
-                this.ctx.beginPath();
-                this.ctx.arc(layout.markerX, iy, 4, 0, Math.PI * 2);
-                this.ctx.fill();
-            }
+            this.drawSettingsSelectionMarker(layout.markerX, iy, isSelected);
 
             if (item.type !== 'button') {
-                this.ctx.textAlign = 'left';
-                this.ctx.fillStyle = (item.disabled) ? '#444' : (isSelected ? '#ff0' : '#888');
-                this.ctx.font = isSelected ? 'bold 20px monospace' : '18px monospace';
-                this.ctx.fillText(item.label, contentX, iy + 5);
+                this.drawSettingsItemLabel(item.label, contentX, iy, isSelected, item.disabled);
             }
 
             this.ctx.textAlign = 'right';
@@ -832,24 +918,17 @@ export class Renderer {
                     this.ctx.font = 'bold 12px monospace';
                     this.ctx.fillText(label, sx + segmentW / 2, iy + 5);
                 });
-            } else if (item.type === 'button') {
-                this.ctx.textAlign = 'center';
-                this.ctx.fillStyle = isSelected ? '#ff0' : '#fff';
-                this.ctx.font = isSelected ? 'bold 24px monospace' : '22px monospace';
-                this.ctx.fillText(game.t('common.back'), box.x + box.width / 2, iy + 5);
             } else if (item.type === 'language') {
-                const tx = layout.language.x;
-                const controlW = layout.language.width;
-                this.ctx.fillStyle = isSelected ? '#088' : '#111';
-                this.ctx.fillRect(tx, iy - 16, controlW, 32);
-                this.ctx.strokeStyle = isSelected ? '#ff0' : '#444';
-                this.ctx.lineWidth = 1;
-                this.ctx.strokeRect(tx, iy - 16, controlW, 32);
-
-                this.ctx.fillStyle = isSelected ? '#fff' : '#aaa';
-                this.ctx.font = 'bold 16px monospace';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText(`< ${item.val} >`, tx + controlW / 2, iy + 5);
+                this.drawSettingsChoiceText(
+                    {
+                        x: layout.language.x,
+                        y: iy - 16,
+                        width: layout.language.width,
+                        height: 32
+                    },
+                    item.val,
+                    isSelected
+                );
             } else {
                 this.ctx.fillStyle = '#666';
                 this.ctx.font = '18px monospace';
@@ -857,6 +936,7 @@ export class Renderer {
             }
         });
 
+        this.drawSoftPadCommandButton(layout.closeButton, 'B', game.t('common.close'), 22);
         this.ctx.textAlign = 'start';
     }
 
@@ -1016,49 +1096,6 @@ export class Renderer {
         // Data Rows
         const rows = game.tr('howToPlay.controls.rows');
 
-        // Row Icon Helper
-        const drawIconBox = (ctx, bx, by, bw, bh, text, style) => {
-            ctx.save();
-            const radius = (style === 'circle-a' || style === 'circle-b') ? Math.min(bw, bh) / 2 : 6;
-            ctx.beginPath();
-            if (style === 'circle-a' || style === 'circle-b') {
-                ctx.arc(bx + bw / 2, by + bh / 2, radius, 0, Math.PI * 2);
-            } else {
-                ctx.moveTo(bx + radius, by);
-                ctx.lineTo(bx + bw - radius, by); ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + radius);
-                ctx.lineTo(bx + bw, by + bh - radius); ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - radius, by + bh);
-                ctx.lineTo(bx + radius, by + bh); ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - radius);
-                ctx.lineTo(bx, by + radius); ctx.quadraticCurveTo(bx, by, bx + radius, by);
-            }
-            ctx.closePath();
-
-            if (style === 'key') {
-                ctx.fillStyle = '#444'; ctx.fill();
-                ctx.strokeStyle = '#888'; ctx.lineWidth = 1; ctx.stroke();
-                ctx.strokeStyle = '#aaa'; ctx.beginPath(); ctx.moveTo(bx + 2, by + 1); ctx.lineTo(bx + bw - 2, by + 1); ctx.stroke();
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 15px monospace';
-            } else if (style === 'pad') {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; ctx.fill();
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 2; ctx.stroke();
-                ctx.fillStyle = '#ddd'; ctx.font = '24px "Segoe UI Symbol", sans-serif';
-            } else if (style === 'smart') {
-                ctx.fillStyle = 'rgba(255, 200, 0, 0.15)'; ctx.fill();
-                ctx.strokeStyle = 'rgba(255, 200, 0, 0.4)'; ctx.lineWidth = 2; ctx.stroke();
-                ctx.fillStyle = '#ffcc00'; ctx.font = '22px "Segoe UI Symbol", sans-serif';
-            } else if (style === 'circle-a') {
-                ctx.fillStyle = 'rgba(80, 80, 255, 0.3)'; ctx.fill();
-                ctx.strokeStyle = 'rgba(120, 120, 255, 0.6)'; ctx.lineWidth = 2; ctx.stroke();
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 20px monospace';
-            } else if (style === 'circle-b') {
-                ctx.fillStyle = 'rgba(255, 80, 80, 0.3)'; ctx.fill();
-                ctx.strokeStyle = 'rgba(255, 120, 120, 0.6)'; ctx.lineWidth = 2; ctx.stroke();
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 20px monospace';
-            }
-            ctx.textAlign = 'center';
-            ctx.fillText(text, bx + bw / 2, by + bh / 2 + (style.startsWith('circle') ? 8 : 7));
-            ctx.restore();
-        };
-
         rows.forEach((row, rowIndex) => {
             this.ctx.fillStyle = (rowIndex % 2 === 0) ? '#111' : '#1a1a1a';
             this.ctx.fillRect(tableX, y, tableW, rowH);
@@ -1101,7 +1138,7 @@ export class Renderer {
                                 if (it === 'B') style = 'circle-b';
                             }
                             const kw = this.getHowToPlayControlKeyWidth(it, i);
-                            drawIconBox(this.ctx, startX, centerY - 15, kw, 30, it, style);
+                            this.drawControlIconBox(startX, centerY - 15, kw, 30, it, style);
                             startX += kw + 6;
                         }
                     });
@@ -1156,39 +1193,6 @@ export class Renderer {
             this.ctx.fillText("x " + game.lives, lx + 50, ly + 30);
         }
 
-        // Instruction Text (Right of bar) - Both modes use long press
-        this.ctx.fillStyle = '#aaa';
-        this.ctx.font = '20px monospace';
-        this.ctx.textAlign = 'right';
-
-        // Draw Button-like frame for BACK
-        const backButton = createBackButtonLayout(this.ctx.canvas.height);
-
-        // Button Background
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        this.ctx.beginPath();
-        this.ctx.roundRect(backButton.x, backButton.y, backButton.width, backButton.height, 10);
-        this.ctx.fill();
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        this.ctx.stroke();
-
-        // Button Progress (Long Press)
-        if (game.selectExitTimer > 0) {
-            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
-            const fillW = (backButton.width * game.selectExitTimer) / game.giveUpMax;
-            this.ctx.beginPath();
-            this.ctx.roundRect(backButton.x, backButton.y, fillW, backButton.height, 10);
-            this.ctx.fill();
-        }
-
-        this.drawSoftPadHoldButtonLabel(
-            backButton.x + backButton.width / 2,
-            backButton.y + backButton.height / 2,
-            'B',
-            game.t('common.back')
-        );
-        this.ctx.textAlign = 'left';
-
         const gridLayout = createSelectStageGridLayout();
 
         for (let i = 0; i < 50; i++) {
@@ -1237,6 +1241,57 @@ export class Renderer {
             this.ctx.font = '10px monospace';
             this.ctx.fillText(i + 1, dx, dy - 5);
         }
+
+        this.drawSelectStageFunctionBar(game);
+        this.ctx.restore();
+    }
+
+    drawSelectStageFunctionBar(game) {
+        const items = game.getSelectStageActionItems();
+        const layout = createSelectStageFunctionBarLayout(this.ctx.canvas.width, this.ctx.canvas.height, items);
+
+        this.ctx.save();
+        this.ctx.fillStyle = '#111';
+        this.ctx.fillRect(0, layout.smartLeft.y - 10, this.ctx.canvas.width, this.ctx.canvas.height - layout.smartLeft.y + 10);
+
+        this.drawControlIconBox(layout.smartLeft.x, layout.smartLeft.y, layout.smartLeft.width, layout.smartLeft.height, '↖', 'smart');
+        this.drawControlIconBox(layout.smartRight.x, layout.smartRight.y, layout.smartRight.width, layout.smartRight.height, '↗', 'smart');
+
+        layout.items.forEach((layoutItem, index) => {
+            const item = items[index];
+            if (!item) return;
+            this.drawExtraMapFunctionButton(layoutItem.rect, item, index === game.selectStageFunctionCursor);
+        });
+
+        this.drawSelectStageBackButton(layout.back, game);
+        this.ctx.restore();
+    }
+
+    drawSelectStageBackButton(rect, game) {
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 8);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        if (game.selectExitTimer > 0) {
+            this.ctx.fillStyle = 'rgba(255, 80, 80, 0.28)';
+            const fillW = (rect.width * game.selectExitTimer) / game.giveUpMax;
+            this.ctx.beginPath();
+            this.ctx.roundRect(rect.x, rect.y, fillW, rect.height, 8);
+            this.ctx.fill();
+        }
+
+        this.drawSoftPadHoldButtonLabel(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2,
+            'B',
+            game.t('common.back'),
+            16
+        );
         this.ctx.restore();
     }
 
@@ -1284,86 +1339,175 @@ export class Renderer {
         }
     }
 
-    drawExtraMapEditorMenu(game) {
-        const layout = createEditorMenuLayout(this.ctx.canvas.width);
-        const { box } = layout;
-        const items = game.getExtraMapEditorMenuItems();
+    drawExtraMapEditorFunctionBar(game) {
+        const barItems = game.getExtraMapEditorFunctionBarItems();
+        const layout = createEditorFunctionBarLayout(this.ctx.canvas.width, barItems);
+        const selectedBarId = game.getExtraMapEditorFunctionBarId();
 
         this.ctx.save();
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        this.ctx.fillRect(box.x, box.y, box.width, box.height);
-        this.ctx.strokeStyle = '#444';
+        this.ctx.fillStyle = '#111';
+        this.ctx.fillRect(0, layout.smartLeft.y - 7, this.ctx.canvas.width, layout.smartLeft.height + 14);
+
+        this.drawControlIconBox(layout.smartLeft.x, layout.smartLeft.y, layout.smartLeft.width, layout.smartLeft.height, '↖', 'smart');
+        this.drawControlIconBox(layout.smartRight.x, layout.smartRight.y, layout.smartRight.width, layout.smartRight.height, '↗', 'smart');
+
+        layout.items.forEach((layoutItem, index) => {
+            const item = barItems[index];
+            if (!item) return;
+            this.drawEditorFunctionButton(
+                layoutItem.rect,
+                item.label,
+                selectedBarId === item.id,
+                item.id === 'terrain' ? game.editor.selectedTile : null
+            );
+        });
+        this.drawEditorDiscardButton(layout.discard, game);
+
+        this.ctx.restore();
+    }
+
+    drawEditorFunctionButton(rect, label, selected, tileId = null) {
+        this.ctx.save();
+        this.ctx.fillStyle = selected ? '#0a5b86' : 'rgba(255, 255, 255, 0.08)';
+        this.ctx.strokeStyle = selected ? '#ff0' : 'rgba(255, 255, 255, 0.24)';
+        this.ctx.lineWidth = selected ? 3 : 2;
+        this.ctx.beginPath();
+        this.ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 8);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        let x = rect.x + 10;
+        const centerY = rect.y + rect.height / 2;
+        if (selected) {
+            this.drawControlIconBox(x, centerY - 14, 28, 28, 'A', 'circle-a');
+            x += 36;
+        }
+        if (tileId !== null) {
+            this.ctx.drawImage(this.assets.getTile(tileId), x, centerY - 11, 22, 22);
+            x += 28;
+        }
+
+        this.ctx.fillStyle = selected ? '#fff' : '#ddd';
+        this.ctx.font = selected ? 'bold 18px monospace' : '18px monospace';
+        this.ctx.textAlign = 'left';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(label, x, centerY + 1);
+        this.ctx.restore();
+    }
+
+    drawEditorDiscardButton(rect, game) {
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
         this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(box.x, box.y, box.width, box.height);
+        this.ctx.beginPath();
+        this.ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 8);
+        this.ctx.fill();
+        this.ctx.stroke();
 
-        this.ctx.textAlign = 'center';
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = 'bold 32px monospace';
-        this.ctx.fillText(game.t('extraMap.editor.title'), layout.title.x, layout.title.y);
+        if (game.giveUpTimer > 0) {
+            this.ctx.fillStyle = 'rgba(255, 80, 80, 0.28)';
+            const fillW = (rect.width * game.giveUpTimer) / game.giveUpMax;
+            this.ctx.beginPath();
+            this.ctx.roundRect(rect.x, rect.y, fillW, rect.height, 8);
+            this.ctx.fill();
+        }
 
-        items.forEach((item, index) => {
-            const iy = layout.getItemY(index);
-            const isSelected = game.extraMapEditorSession.menuCursor === index;
+        this.drawSoftPadHoldButtonLabel(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2,
+            'B',
+            game.t('extraMap.actions.discardShort'),
+            16
+        );
+        this.ctx.restore();
+    }
 
-            if (isSelected) {
-                this.ctx.fillStyle = '#ff0';
-                this.ctx.beginPath();
-                this.ctx.arc(layout.markerX, iy, 4, 0, Math.PI * 2);
-                this.ctx.fill();
-            }
+    getEditorTileName(game, tileId) {
+        return game.getEditorTileName(tileId);
+    }
 
-            if (item.id === 'back') {
-                this.ctx.fillStyle = isSelected ? '#ff0' : '#fff';
-                this.ctx.font = isSelected ? 'bold 24px monospace' : '22px monospace';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText(item.label, layout.title.x, iy + 5);
-                return;
-            }
+    drawExtraMapEditorDifficultyModal(game) {
+        const layout = createEditorDifficultyModalLayout(this.ctx.canvas.width, this.ctx.canvas.height);
+        const { box } = layout;
+        const difficulty = game.extraMapEditorSession.difficulty;
+        const selectedRow = game.extraMapEditorSession.difficultyCursor;
+        const functionBar = createEditorFunctionBarLayout(
+            this.ctx.canvas.width,
+            game.getExtraMapEditorFunctionBarItems()
+        );
 
-            this.ctx.fillStyle = isSelected ? '#ff0' : '#888';
-            this.ctx.font = isSelected ? 'bold 20px monospace' : '18px monospace';
-            this.ctx.textAlign = 'left';
-            this.ctx.fillText(item.label, layout.labelX, iy + 5);
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, functionBar.smartLeft.y - 7);
+        this.drawSettingsModalFrame(box, layout.title, game.t('extraMap.editor.difficultySettingsTitle'));
+        this.drawSettingsSelectionMarker(layout.valueLabel.x - 24, layout.valueLabel.y, selectedRow === 0);
+        this.drawSettingsItemLabel(
+            game.t('extraMap.editor.difficulty'),
+            layout.valueLabel.x,
+            layout.valueLabel.y,
+            selectedRow === 0
+        );
+        this.drawDifficultySettingValue(layout.valueControlRect, difficulty, selectedRow === 0);
 
-            if (item.id === 'difficulty') {
-                this.ctx.fillStyle = isSelected ? '#088' : '#111';
-                this.ctx.fillRect(layout.value.x, iy - 16, layout.value.width, 32);
-                this.ctx.strokeStyle = isSelected ? '#ff0' : '#444';
-                this.ctx.lineWidth = 1;
-                this.ctx.strokeRect(layout.value.x, iy - 16, layout.value.width, 32);
-                this.ctx.fillStyle = isSelected ? '#fff' : '#aaa';
-                this.ctx.font = 'bold 16px monospace';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText(`< ${item.value} >`, layout.value.x + layout.value.width / 2, iy + 5);
-            }
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.055)';
+        this.ctx.fillRect(layout.description.x, layout.description.y, layout.description.width, layout.description.height);
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(layout.description.x, layout.description.y, layout.description.width, layout.description.height);
+
+        this.ctx.fillStyle = '#ddd';
+        this.ctx.font = '18px monospace';
+        this.ctx.textAlign = 'left';
+        const description = this.normalizeDifficultyDescription(
+            game.tr('extraMap.editor.difficultyDescriptions')[difficulty - 1] ?? ''
+        );
+        const lines = this.wrapTextByWidth(description, layout.description.width - 32).slice(0, 2);
+        const lineY = layout.description.y + (lines.length > 1 ? 30 : 48);
+        lines.forEach((line, lineIndex) => {
+            this.ctx.fillText(line, layout.description.x + 16, lineY + lineIndex * 24);
         });
 
-        this.drawDifficultyDescription(game, layout);
-        if (game.extraMapEditorSession.controlsOpen) {
-            this.drawExtraMapEditorControls(game);
+        this.drawSoftPadCommandButton(layout.closeButton, 'B', game.t('common.close'), 18);
+        this.ctx.restore();
+    }
+
+    drawDifficultySettingValue(rect, difficulty, selected) {
+        this.ctx.save();
+        this.drawSettingsChoiceFrame(rect, selected);
+
+        this.ctx.fillStyle = selected ? '#fff' : '#aaa';
+        this.ctx.font = 'bold 16px monospace';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('<', rect.x + 42, rect.y + rect.height / 2 + 1);
+        this.ctx.fillText('>', rect.x + rect.width - 42, rect.y + rect.height / 2 + 1);
+        this.drawModalDifficultyStars(rect.x + rect.width / 2 - (difficulty - 1) * 10, rect.y + rect.height / 2, difficulty);
+        this.ctx.restore();
+    }
+
+    normalizeDifficultyDescription(text) {
+        return String(text).replace(/^★+:\s*/, '');
+    }
+
+    drawModalDifficultyStars(x, centerY, count, enabled = true) {
+        this.ctx.save();
+        for (let i = 0; i < count; i++) {
+            this.drawSmallStar(
+                x + i * 17,
+                centerY,
+                8,
+                3.5,
+                enabled ? '#ffcc00' : '#4e4e4e',
+                enabled ? '#fff1a8' : '#666'
+            );
         }
         this.ctx.restore();
     }
 
     drawExtraMapEditorControls(game) {
-        const box = {
-            x: 30,
-            y: 95,
-            width: 900,
-            height: 520
-        };
-        const content = {
-            x: box.x + 30,
-            y: box.y + 78,
-            width: box.width - 60,
-            height: box.height - 158
-        };
-        const footer = {
-            x: box.x + 30,
-            y: box.y + box.height - 82,
-            width: box.width - 60,
-            height: 58
-        };
+        const layout = createEditorControlsModalLayout();
+        const { box, content, footer, closeButton } = layout;
         let y = content.y;
 
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.93)';
@@ -1406,12 +1550,6 @@ export class Renderer {
             this.ctx.fillText(game.t('howToPlay.scrollMore'), footer.x, footer.y + 35);
         }
 
-        const closeButton = {
-            x: footer.x + footer.width - 220,
-            y: footer.y + 7,
-            width: 220,
-            height: 44
-        };
         this.drawSoftPadCommandButton(closeButton, 'B', game.t('extraMap.editor.controls.close'), 18);
     }
 
@@ -1420,12 +1558,12 @@ export class Renderer {
         this.ctx.font = 'bold 20px monospace';
         this.ctx.textAlign = 'left';
         this.ctx.fillText(game.t('extraMap.editor.controls.flowTitle'), x, y + 24);
-        y += 42;
+        y += 52;
 
         this.ctx.fillStyle = '#ddd';
         this.ctx.font = '16px monospace';
+        this.ctx.fillStyle = '#ccc';
         game.tr('extraMap.editor.controls.flowLines').forEach((line, index) => {
-            this.ctx.fillStyle = index === 0 ? '#fff' : '#ccc';
             this.ctx.fillText(`${index + 1}. ${line}`, x + 8, y);
             y += 26;
         });
@@ -1443,7 +1581,12 @@ export class Renderer {
         actions.forEach((action, index) => {
             const [title, face, description] = action;
             const items = String(face).split(' / ');
-            const blockHeight = items.length > 4 ? 112 : 96;
+            this.ctx.font = '15px monospace';
+            const descriptionLines = this.wrapTextByWidth(description, width - 382).slice(0, 4);
+            const keyRows = items.length > 4 ? 2 : 1;
+            const keyAreaHeight = keyRows * 30 + (keyRows - 1) * 0;
+            const descriptionHeight = descriptionLines.length * 22;
+            const blockHeight = Math.max(96, 46 + keyAreaHeight, 46 + descriptionHeight);
             this.ctx.fillStyle = index % 2 === 0 ? '#111' : '#1a1a1a';
             this.ctx.fillRect(x, y, width, blockHeight);
             this.ctx.strokeStyle = '#444';
@@ -1464,7 +1607,7 @@ export class Renderer {
 
             this.ctx.fillStyle = '#ddd';
             this.ctx.font = '15px monospace';
-            this.wrapText(description, width - 360).slice(0, 3).forEach((line, lineIndex) => {
+            descriptionLines.forEach((line, lineIndex) => {
                 this.ctx.fillText(line, x + 360, y + 28 + lineIndex * 22);
             });
 
@@ -1495,9 +1638,9 @@ export class Renderer {
     }
 
     getControlCellStyle(item, columnIndex) {
+        if (item === 'A') return 'circle-a';
+        if (item === 'B') return 'circle-b';
         if (columnIndex === 3) {
-            if (item === 'A') return 'circle-a';
-            if (item === 'B') return 'circle-b';
             if (item === '↖' || item === '↗') return 'smart';
             return 'pad';
         }
@@ -1507,13 +1650,15 @@ export class Renderer {
     drawSoftPadButtonLabel(centerX, centerY, button, label, fontSize = 20, color = '#fff') {
         this.ctx.font = `bold ${fontSize}px monospace`;
         const textWidth = this.ctx.measureText(label).width || label.length * fontSize * 0.6;
-        const totalWidth = 30 + 10 + textWidth;
+        const gap = 14;
+        const totalWidth = 30 + gap + textWidth;
         const iconX = centerX - totalWidth / 2;
-        const textX = iconX + 40;
+        const textX = iconX + 30 + gap;
         this.drawControlIconBox(iconX, centerY - 15, 30, 30, button, button === 'B' ? 'circle-b' : 'circle-a');
         this.ctx.fillStyle = color;
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(label, textX, centerY + Math.round(fontSize * 0.35));
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(label, textX, centerY + 1);
     }
 
     drawSoftPadHoldButtonLabel(centerX, centerY, button, label, fontSize = 20, color = '#fff') {
@@ -1521,18 +1666,21 @@ export class Renderer {
         const holdText = 'HOLD';
         const holdWidth = this.ctx.measureText(holdText).width;
         const labelWidth = this.ctx.measureText(label).width || label.length * fontSize * 0.6;
-        const totalWidth = holdWidth + 10 + 30 + 10 + labelWidth;
+        const gap = 14;
+        const totalWidth = holdWidth + 10 + 30 + gap + labelWidth;
         let x = centerX - totalWidth / 2;
 
         this.ctx.fillStyle = color;
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(holdText, x, centerY + Math.round(fontSize * 0.35));
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(holdText, x, centerY + 1);
         x += holdWidth + 10;
         this.drawControlIconBox(x, centerY - 15, 30, 30, button, button === 'B' ? 'circle-b' : 'circle-a');
-        x += 40;
+        x += 30 + gap;
         this.ctx.fillStyle = color;
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(label, x, centerY + Math.round(fontSize * 0.35));
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(label, x, centerY + 1);
     }
 
     drawSoftPadCommandButton(rect, button, label, fontSize = 22) {
@@ -1542,6 +1690,23 @@ export class Renderer {
         this.ctx.fill();
         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
         this.ctx.lineWidth = 1;
+        this.ctx.stroke();
+        this.drawSoftPadButtonLabel(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2,
+            button,
+            label,
+            fontSize
+        );
+    }
+
+    drawSelectableSoftPadCommandButton(rect, button, label, selected, fontSize = 22) {
+        this.ctx.fillStyle = selected ? '#0a5b86' : 'rgba(255, 255, 255, 0.1)';
+        this.ctx.beginPath();
+        this.ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 10);
+        this.ctx.fill();
+        this.ctx.strokeStyle = selected ? '#ff0' : 'rgba(255, 255, 255, 0.3)';
+        this.ctx.lineWidth = selected ? 2 : 1;
         this.ctx.stroke();
         this.drawSoftPadButtonLabel(
             rect.x + rect.width / 2,
@@ -1619,27 +1784,9 @@ export class Renderer {
         }
 
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(text, x + width / 2, y + height / 2 + (style.startsWith('circle') ? 8 : 7));
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(text, x + width / 2, y + height / 2 + 1);
         this.ctx.restore();
-    }
-
-    drawDifficultyDescription(game, layout) {
-        const rect = layout.description;
-        const text = game.getExtraMapEditDifficultyDescription();
-
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
-        this.ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-        this.ctx.strokeStyle = '#444';
-        this.ctx.lineWidth = 1;
-        this.ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
-
-        this.ctx.fillStyle = '#aaa';
-        this.ctx.font = '16px monospace';
-        this.ctx.textAlign = 'left';
-        const lines = this.wrapText(text, rect.width - 32);
-        lines.slice(0, 4).forEach((line, index) => {
-            this.ctx.fillText(line, rect.x + 16, rect.y + 28 + index * 22);
-        });
     }
 
     wrapText(text, maxWidth) {
@@ -1653,6 +1800,25 @@ export class Renderer {
             } else {
                 lines.push(line);
                 line = word;
+            }
+        }
+        if (line) lines.push(line);
+        return lines;
+    }
+
+    wrapTextByWidth(text, maxWidth) {
+        const source = String(text);
+        if (source.includes(' ')) return this.wrapText(source, maxWidth);
+
+        const lines = [];
+        let line = '';
+        for (const char of Array.from(source)) {
+            const candidate = `${line}${char}`;
+            if (this.ctx.measureText(candidate).width <= maxWidth || !line) {
+                line = candidate;
+            } else {
+                lines.push(line);
+                line = char;
             }
         }
         if (line) lines.push(line);

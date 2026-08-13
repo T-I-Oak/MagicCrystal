@@ -6,9 +6,13 @@ describe('settingsLayout', () => {
         const layout = createSettingsLayout(960);
 
         expect(layout.getItemY(0)).toBe(230);
-        expect(layout.getItemY(6)).toBe(560);
+        expect(layout.getItemY(5)).toBe(505);
         expect(layout.getItemIndexAt(layout.labelX, layout.getItemY(5))).toBe(5);
-        expect(layout.itemCount).toBe(7);
+        expect(layout.itemCount).toBe(6);
+        expect(layout.closeButton.x).toBeGreaterThan(layout.box.x);
+        expect(layout.closeButton.y).toBeGreaterThan(layout.getItemRect(5).y + layout.getItemRect(5).height);
+        expect(layout.closeButton.x + layout.closeButton.width).toBeLessThan(layout.box.x + layout.box.width);
+        expect(layout.closeButton.y + layout.closeButton.height).toBeLessThan(layout.box.y + layout.box.height);
     });
 
     it('rejects clicks between setting rows', () => {

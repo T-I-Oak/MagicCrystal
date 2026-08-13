@@ -50,6 +50,27 @@ describe('Game Class', () => {
         expect(game.lives).toBe(3);
     });
 
+    it('keeps settings FPS at the lower bound used by the slider', () => {
+        localStorage.setItem('magic-crystal', JSON.stringify({
+            settings: {
+                v: 0,
+                d: {
+                    targetFPS: 10
+                }
+            }
+        }));
+        const game = new Game(mockCanvas, mockAssets);
+
+        expect(game.targetFPS).toBe(10);
+
+        game.state = 'SETTINGS';
+        game.settingsCursor = 0;
+        game.input.actions.left = true;
+        game.updateSettings();
+
+        expect(game.targetFPS).toBe(10);
+    });
+
     it('unlocks only the first ten play stages initially', () => {
         const game = new Game(mockCanvas, mockAssets);
 
@@ -107,6 +128,42 @@ describe('Game Class', () => {
         expect(game.selectCursor).toBe(1);
     });
 
+    it('cycles select stage functions with smart keys', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'SELECT';
+
+        expect(game.getSelectStageActionItems().map(item => item.id)).toEqual(['play', 'settings']);
+
+        game.input.actions.smartRight = true;
+        game.updateSelect();
+        expect(game.selectStageFunctionCursor).toBe(1);
+
+        game.input.prevActions.smartRight = true;
+        game.input.actions.smartRight = false;
+        game.input.actions.smartLeft = true;
+        game.updateSelect();
+        expect(game.selectStageFunctionCursor).toBe(0);
+    });
+
+    it('opens settings from select stage and returns to select', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'SELECT';
+        game.selectStageFunctionCursor = 1;
+        game.input.actions.confirm = true;
+
+        game.updateSelect();
+
+        expect(game.state).toBe('SETTINGS');
+        expect(game.settingsReturnState).toBe('SELECT');
+
+        game.input.prevActions.confirm = true;
+        game.input.actions.confirm = false;
+        game.input.actions.cancel = true;
+        game.updateSettings();
+
+        expect(game.state).toBe('SELECT');
+    });
+
     it('keeps the stage cursor on the cleared stage after returning to stage select', () => {
         const game = new Game(mockCanvas, mockAssets);
         game.selectCursor = 0;
@@ -157,21 +214,19 @@ describe('Game Class', () => {
         expect(game.extraMapCursor).toBe(10);
     });
 
-    it('opens the extra map action menu and creates a blank held map from an empty slot', () => {
+    it('creates a blank held map from an empty slot with the extra map function bar', () => {
         const game = new Game(mockCanvas, mockAssets);
         game.state = 'EXTRA_MAP';
         for (let stage = 0; stage < 10; stage++) {
             game.stageClearHistory[stage] = true;
         }
 
+        game.input.actions.smartRight = true;
+        game.updateExtraMap();
+        game.input.prevActions.smartRight = true;
+        game.input.actions.smartRight = false;
         game.input.actions.confirm = true;
         game.updateExtraMap();
-
-        expect(game.extraMapActionMenu).toMatchObject({ slotIndex: 0, cursor: 0 });
-        expect(game.getExtraMapActionItems().map(item => item.id)).toEqual(['create', 'paste', 'cancel']);
-
-        game.input.prevActions.confirm = false;
-        game.executeExtraMapAction(0);
 
         expect(game.extraMaps).toHaveLength(HELD_MAP_LIMIT);
         expect(game.extraMapCursor).toBe(0);
@@ -180,10 +235,11 @@ describe('Game Class', () => {
         expect(game.isEditingExtraMap()).toBe(true);
         expect(game.extraMaps[0].stage[0][0]).toBe(3);
         expect(savedExtraMaps()).toHaveLength(HELD_MAP_LIMIT);
-        expect(savedExtraMaps()[0].stage[0][0]).toBe(3);
+        expect(savedExtraMaps()[0]).not.toHaveProperty('stage');
+        expect(decodeSharedMap(savedExtraMaps()[0].mapData).tiles[0][0]).toBe(3);
     });
 
-    it('shows held-map action menu items for a created map', () => {
+    it('shows stable extra map function items for a created map', () => {
         const game = new Game(mockCanvas, mockAssets);
         game.state = 'EXTRA_MAP';
         for (let stage = 0; stage < 10; stage++) {
@@ -191,7 +247,7 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.saveExtraMapEdit();
         game.openExtraMapActionMenu(0);
 
@@ -200,18 +256,17 @@ describe('Game Class', () => {
             'edit',
             'copy',
             'paste',
-            'share',
             'favorite',
-            'delete',
-            'cancel'
+            'share',
+            'delete'
         ]);
+        expect(game.getExtraMapActionItems().find(item => item.id === 'delete').label).toBe('DELETE');
         expect(game.getExtraMapActionItems().filter(item => item.enabled).map(item => item.id)).toEqual([
             'play',
             'edit',
             'copy',
             'favorite',
-            'delete',
-            'cancel'
+            'delete'
         ]);
     });
 
@@ -223,7 +278,7 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.saveExtraMapEdit();
         game.openExtraMapActionMenu(0);
         game.executeExtraMapAction(0);
@@ -281,13 +336,13 @@ describe('Game Class', () => {
 
         game.openExtraMapActionMenu(0);
 
-        expect(game.getExtraMapActionItems()[1]).toMatchObject({ id: 'paste', enabled: false });
+        expect(game.getExtraMapActionItems()[3]).toMatchObject({ id: 'paste', enabled: false });
 
-        game.executeExtraMapAction(1);
+        game.executeExtraMapAction(3);
 
         expect(game.extraMaps).toEqual(new Array(HELD_MAP_LIMIT).fill(null));
         expect(game.noticeText).toBe(game.t('extraMap.notice.noCopiedStage'));
-        expect(game.extraMapActionMenu).toMatchObject({ slotIndex: 0, cursor: 1 });
+        expect(game.extraMapFunctionCursor).toBe(3);
     });
 
     it('copies a held map stage and pastes it into an empty slot', () => {
@@ -305,8 +360,8 @@ describe('Game Class', () => {
         expect(game.extraMapActionMenu).toBeNull();
 
         game.openExtraMapActionMenu(1);
-        expect(game.getExtraMapActionItems()[1]).toMatchObject({ id: 'paste', enabled: true });
-        game.executeExtraMapAction(1);
+        expect(game.getExtraMapActionItems()[3]).toMatchObject({ id: 'paste', enabled: true });
+        game.executeExtraMapAction(3);
 
         expect(game.extraMaps).toHaveLength(HELD_MAP_LIMIT);
         expect(game.extraMaps[0].stage[0][1]).toBe(4);
@@ -358,15 +413,15 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.saveExtraMapEdit();
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(4);
+        game.executeExtraMapAction(game.getExtraMapActionItems().findIndex(item => item.id === 'share'));
 
         expect(game.extraMaps).toHaveLength(HELD_MAP_LIMIT);
         expect(game.state).toBe('EXTRA_MAP');
         expect(game.noticeText).toBe(game.t('extraMap.notice.shareRequiresClear'));
-        expect(game.extraMapActionMenu).toMatchObject({ slotIndex: 0, cursor: 4 });
+        expect(game.extraMapFunctionCursor).toBe(game.getExtraMapActionItems().findIndex(item => item.id === 'share'));
     });
 
     it('prepares shared map data for a cleared held map', () => {
@@ -380,8 +435,9 @@ describe('Game Class', () => {
         game.extraMaps[0].stage[0][1] = 4;
 
         game.openExtraMapActionMenu(0);
-        expect(game.getExtraMapActionItems()[4]).toMatchObject({ id: 'share', enabled: true });
-        game.executeExtraMapAction(4);
+        const shareIndex = game.getExtraMapActionItems().findIndex(item => item.id === 'share');
+        expect(game.getExtraMapActionItems()[shareIndex]).toMatchObject({ id: 'share', enabled: true });
+        game.executeExtraMapAction(shareIndex);
 
         const decoded = decodeSharedMap(game.pendingExtraMapShare.mapData);
         expect(decoded.difficulty).toBe(3);
@@ -400,7 +456,8 @@ describe('Game Class', () => {
         expect(game.pendingExtraMapShare.stage[0][1]).toBe(4);
         expect(game.extraMapCursor).toBe(0);
         expect(game.extraMapActionMenu).toBeNull();
-        expect(savedExtraMaps()[0].stage[0][1]).toBe(4);
+        expect(savedExtraMaps()[0]).not.toHaveProperty('stage');
+        expect(decodeSharedMap(savedExtraMaps()[0].mapData).tiles[0][1]).toBe(4);
     });
 
     it('shows a notice when the share environment cannot create the required image', async () => {
@@ -426,7 +483,7 @@ describe('Game Class', () => {
         }));
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(4);
+        game.executeExtraMapAction(game.getExtraMapActionItems().findIndex(item => item.id === 'share'));
         await new Promise(resolve => setTimeout(resolve, 0));
 
         expect(game.noticeText).toBe(game.t('extraMap.notice.shareFailed'));
@@ -455,7 +512,8 @@ describe('Game Class', () => {
         expect(globalThis.location.search).toBe('?debug=1');
         expect(globalThis.location.hash).toBe('#top');
         expect(savedExtraMaps()).toHaveLength(HELD_MAP_LIMIT);
-        expect(savedExtraMaps()[0].stage[0][1]).toBe(4);
+        expect(savedExtraMaps()[0]).not.toHaveProperty('stage');
+        expect(decodeSharedMap(savedExtraMaps()[0].mapData).tiles[0][1]).toBe(4);
     });
 
     it('plays an existing held map without changing difficulty when shared map tiles are duplicated', () => {
@@ -554,10 +612,10 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.saveExtraMapEdit();
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(5);
+        game.executeExtraMapAction(game.getExtraMapActionItems().findIndex(item => item.id === 'favorite'));
 
         expect(game.extraMaps).toHaveLength(HELD_MAP_LIMIT);
         expect(game.extraMaps[0].favorite).toBe(true);
@@ -566,8 +624,9 @@ describe('Game Class', () => {
         expect(savedExtraMaps()[0].favorite).toBe(true);
 
         game.openExtraMapActionMenu(0);
-        expect(game.getExtraMapActionItems()[5]).toMatchObject({ id: 'favorite', label: 'UNFAVORITE' });
-        game.executeExtraMapAction(5);
+        const unfavoriteIndex = game.getExtraMapActionItems().findIndex(item => item.id === 'favorite');
+        expect(game.getExtraMapActionItems()[unfavoriteIndex]).toMatchObject({ id: 'favorite', label: 'UNFAVORITE' });
+        game.executeExtraMapAction(unfavoriteIndex);
 
         expect(game.extraMaps[0].favorite).toBe(false);
     });
@@ -597,78 +656,68 @@ describe('Game Class', () => {
         expect(game.extraMapActionMenu).toBeNull();
     });
 
-    it('deletes held maps from the extra map action menu', () => {
-        const game = new Game(mockCanvas, mockAssets);
-        game.state = 'EXTRA_MAP';
-        for (let stage = 0; stage < 10; stage++) {
-            game.stageClearHistory[stage] = true;
-        }
-
-        game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
-        game.saveExtraMapEdit();
-        game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(6);
-
-        expect(game.extraMaps[0]).not.toBeNull();
-        expect(game.extraMapDeleteConfirm).toEqual({ slotIndex: 0 });
-        expect(game.extraMapActionMenu).toBeNull();
-
-        game.input.prevActions.confirm = false;
-        game.input.actions.confirm = true;
-        game.updateExtraMap();
-
-        expect(game.extraMaps).toHaveLength(HELD_MAP_LIMIT);
-        expect(game.extraMaps[0]).toBeNull();
-        expect(game.extraMapCursor).toBe(0);
-        expect(game.extraMapActionMenu).toBeNull();
-        expect(game.extraMapDeleteConfirm).toBeNull();
-        expect(savedExtraMaps()).toHaveLength(HELD_MAP_LIMIT);
-        expect(savedExtraMaps()[0]).toBeNull();
-    });
-
-    it('keeps held maps when the delete confirmation is canceled', () => {
+    it('deletes a held map only after delete confirmation', () => {
         const game = new Game(mockCanvas, mockAssets);
         game.state = 'EXTRA_MAP';
         game.extraMaps = [createBlankHeldMap(1)];
 
         game.openExtraMapActionMenu(0);
         const deleteIndex = game.getExtraMapActionItems().findIndex(item => item.id === 'delete');
+
+        expect(game.getExtraMapActionItems()[deleteIndex]).toMatchObject({
+            id: 'delete',
+            label: 'DELETE',
+            enabled: true
+        });
+
         game.executeExtraMapAction(deleteIndex);
 
         expect(game.extraMapDeleteConfirm).toEqual({ slotIndex: 0 });
-
-        game.input.prevActions.cancel = false;
-        game.input.actions.cancel = true;
-        game.updateExtraMap();
-
         expect(game.extraMaps[0]).not.toBeNull();
+
+        game.confirmExtraMapDelete();
+
         expect(game.extraMapDeleteConfirm).toBeNull();
+        expect(game.extraMaps[0]).toBeNull();
+        expect(savedExtraMaps()[0]).toBeNull();
     });
 
-    it('keeps favorite held maps from being deleted', () => {
+    it('keeps a held map when delete confirmation is cancelled', () => {
         const game = new Game(mockCanvas, mockAssets);
         game.state = 'EXTRA_MAP';
-        game.extraMaps = [{
-            ...createBlankHeldMap(1),
-            favorite: true
-        }];
+        game.extraMaps = [createBlankHeldMap(1)];
+
+        game.openExtraMapActionMenu(0);
+        game.executeExtraMapAction(game.getExtraMapActionItems().findIndex(item => item.id === 'delete'));
+        game.closeExtraMapDeleteConfirm();
+
+        expect(game.extraMapDeleteConfirm).toBeNull();
+        expect(game.extraMaps[0]).not.toBeNull();
+    });
+
+    it('disables delete for favorite held maps', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'EXTRA_MAP';
+        game.extraMaps = [{ ...createBlankHeldMap(1), favorite: true }];
 
         game.openExtraMapActionMenu(0);
         const deleteIndex = game.getExtraMapActionItems().findIndex(item => item.id === 'delete');
+
         expect(game.getExtraMapActionItems()[deleteIndex]).toMatchObject({
+            id: 'delete',
+            label: 'DELETE',
             enabled: false,
             noticeKey: 'extraMap.notice.favoriteDeleteProtected'
         });
 
         game.executeExtraMapAction(deleteIndex);
 
+        expect(game.extraMapDeleteConfirm).toBeNull();
         expect(game.extraMaps[0]).not.toBeNull();
-        expect(game.extraMaps[0].favorite).toBe(true);
         expect(game.noticeText).toBe(game.t('extraMap.notice.favoriteDeleteProtected'));
     });
 
-    it('starts held-map editing and opens the edit menu from cancel', () => {
+    it('starts held-map editing with help selected as the default editor function', () => {
         const game = new Game(mockCanvas, mockAssets);
         game.state = 'EXTRA_MAP';
         for (let stage = 0; stage < 10; stage++) {
@@ -676,7 +725,7 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.openExtraMapActionMenu(0);
         game.executeExtraMapAction(1);
 
@@ -685,20 +734,23 @@ describe('Game Class', () => {
         expect(game.extraMapActionMenu).toBeNull();
         expect(game.level.getTile(0, 0)).toBe(3);
 
-        game.input.actions.cancel = true;
-        game.updateExtraMapEditor();
-
-        expect(game.extraMapEditorSession.menuOpen).toBe(true);
-        expect(game.getExtraMapEditorMenuItems().map(item => item.id)).toEqual([
+        expect(game.getExtraMapEditorFunction()).toEqual({ id: 'controls' });
+        expect(game.getExtraMapEditorFunctions().map(item => item.id)).toEqual([
             'controls',
+            'tile',
+            'tile',
+            'tile',
+            'tile',
+            'tile',
+            'tile',
+            'tile',
+            'tile',
             'difficulty',
-            'save',
-            'discard',
-            'back'
+            'save'
         ]);
     });
 
-    it('opens and closes the extra map editor controls modal from the edit menu', () => {
+    it('opens and closes the extra map editor controls modal from the editor function bar', () => {
         const game = new Game(mockCanvas, mockAssets);
         game.state = 'EXTRA_MAP';
         for (let stage = 0; stage < 10; stage++) {
@@ -706,20 +758,83 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.startExtraMapEdit(0);
-        game.openExtraMapEditorMenu();
 
-        game.executeExtraMapEditorMenuAction(0);
+        game.executeExtraMapEditorFunction();
 
-        expect(game.extraMapEditorSession.menuOpen).toBe(true);
         expect(game.extraMapEditorSession.controlsOpen).toBe(true);
 
         game.input.actions.cancel = true;
-        game.updateExtraMapEditorMenu();
+        game.updateExtraMapEditor();
 
         expect(game.extraMapEditorSession.controlsOpen).toBe(false);
-        expect(game.extraMapEditorSession.menuOpen).toBe(true);
+        expect(game.state).toBe('EDITOR');
+    });
+
+    it('selects the editor function bar item before executing it', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'EXTRA_MAP';
+        for (let stage = 0; stage < 10; stage++) {
+            game.stageClearHistory[stage] = true;
+        }
+
+        game.openExtraMapActionMenu(0);
+        game.executeExtraMapAction(1);
+        game.startExtraMapEdit(0);
+
+        const initialTile = game.editor.selectedTile;
+        game.selectExtraMapEditorFunctionBarItem('terrain');
+
+        expect(game.getExtraMapEditorFunctionBarId()).toBe('terrain');
+        expect(game.getExtraMapEditorFunction()).toEqual({ id: 'tile', tile: initialTile });
+
+        game.selectExtraMapEditorTile(5);
+        game.selectExtraMapEditorFunctionBarItem('terrain');
+
+        expect(game.getExtraMapEditorFunctionBarId()).toBe('terrain');
+        expect(game.getExtraMapEditorFunction()).toEqual({ id: 'tile', tile: 5 });
+    });
+
+    it('only places terrain from map-cell taps when the tapped cell is already selected', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'EXTRA_MAP';
+        for (let stage = 0; stage < 10; stage++) {
+            game.stageClearHistory[stage] = true;
+        }
+
+        game.openExtraMapActionMenu(0);
+        game.executeExtraMapAction(1);
+        game.startExtraMapEdit(0);
+        game.selectExtraMapEditorTile(5);
+
+        game.tapExtraMapEditorCell(1, 0);
+
+        expect(game.editor.cx).toBe(1);
+        expect(game.editor.cy).toBe(0);
+        expect(game.level.getTile(1, 0)).not.toBe(5);
+
+        game.tapExtraMapEditorCell(1, 0);
+
+        expect(game.level.getTile(1, 0)).toBe(5);
+    });
+
+    it('does not execute non-terrain editor functions from map-cell taps', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'EXTRA_MAP';
+        for (let stage = 0; stage < 10; stage++) {
+            game.stageClearHistory[stage] = true;
+        }
+
+        game.openExtraMapActionMenu(0);
+        game.executeExtraMapAction(1);
+        game.startExtraMapEdit(0);
+        game.selectExtraMapEditorFunctionById('save');
+
+        game.tapExtraMapEditorCell(game.editor.cx, game.editor.cy);
+
+        expect(game.state).toBe('EDITOR');
+        expect(game.getExtraMapEditorFunctionBarId()).toBe('save');
     });
 
     it('does not close the extra map editor controls modal with confirm', () => {
@@ -730,13 +845,12 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.startExtraMapEdit(0);
-        game.openExtraMapEditorMenu();
         game.openExtraMapEditorControls();
 
         game.input.actions.confirm = true;
-        game.updateExtraMapEditorMenu();
+        game.updateExtraMapEditor();
 
         expect(game.extraMapEditorSession.controlsOpen).toBe(true);
     });
@@ -749,13 +863,12 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.startExtraMapEdit(0);
-        game.openExtraMapEditorMenu();
         game.openExtraMapEditorControls();
 
         game.input.actions.down = true;
-        game.updateExtraMapEditorMenu();
+        game.updateExtraMapEditor();
 
         expect(game.extraMapEditorSession.controlsScroll).toBeGreaterThan(0);
         expect(game.extraMapEditorSession.controlsOpen).toBe(true);
@@ -777,7 +890,7 @@ describe('Game Class', () => {
         expect(game.state).toBe('TITLE');
     });
 
-    it('changes edit difficulty through the edit menu without dropping clear status on save', () => {
+    it('changes edit difficulty through the difficulty modal without dropping clear status on save', () => {
         const game = new Game(mockCanvas, mockAssets);
         game.state = 'EXTRA_MAP';
         for (let stage = 0; stage < 20; stage++) {
@@ -785,17 +898,109 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.extraMaps[0].cleared = true;
         game.startExtraMapEdit(0);
-        game.openExtraMapEditorMenu();
 
-        game.changeExtraMapEditDifficulty(1);
-        game.executeExtraMapEditorMenuAction(2);
+        game.selectExtraMapEditorFunctionById('difficulty');
+        game.executeExtraMapEditorFunction();
+        game.input.actions.right = true;
+        game.updateExtraMapEditor();
+        game.input.prevActions.right = true;
+        game.input.actions.right = false;
+        game.input.actions.cancel = true;
+        game.updateExtraMapEditor();
+        game.saveExtraMapEdit();
 
         expect(game.state).toBe('EXTRA_MAP');
         expect(game.extraMaps[0].difficulty).toBe(2);
         expect(game.extraMaps[0].cleared).toBe(true);
+    });
+
+    it('closes the difficulty modal without reverting immediate editor difficulty changes', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'EXTRA_MAP';
+        for (let stage = 0; stage < 20; stage++) {
+            game.stageClearHistory[stage] = true;
+        }
+
+        game.openExtraMapActionMenu(0);
+        game.executeExtraMapAction(1);
+        game.extraMaps[0].difficulty = 1;
+        game.startExtraMapEdit(0);
+        game.selectExtraMapEditorFunctionById('difficulty');
+        game.executeExtraMapEditorFunction();
+
+        game.input.actions.right = true;
+        game.updateExtraMapEditor();
+        expect(game.extraMapEditorSession.difficulty).toBe(2);
+
+        game.input.prevActions.right = true;
+        game.input.actions.right = false;
+        game.input.actions.cancel = true;
+        game.updateExtraMapEditor();
+
+        expect(game.extraMapEditorSession.difficultyOpen).toBe(false);
+        expect(game.extraMapEditorSession.difficulty).toBe(2);
+    });
+
+    it('cycles editor functions with smart keys and places terrain with confirm', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'EXTRA_MAP';
+        for (let stage = 0; stage < 10; stage++) {
+            game.stageClearHistory[stage] = true;
+        }
+
+        game.openExtraMapActionMenu(0);
+        game.executeExtraMapAction(1);
+        game.startExtraMapEdit(0);
+        game.editor.cx = 1;
+        game.editor.cy = 0;
+
+        game.input.actions.smartRight = true;
+        game.updateExtraMapEditor();
+        game.input.prevActions.smartRight = true;
+        game.input.actions.smartRight = false;
+        game.input.actions.confirm = true;
+        game.updateExtraMapEditor();
+
+        expect(game.editor.selectedTile).toBe(0);
+        expect(game.level.getTile(1, 0)).toBe(0);
+
+        game.input.prevActions.confirm = true;
+        game.input.actions.confirm = false;
+        game.input.prevActions.smartRight = false;
+        game.input.actions.smartRight = true;
+        game.updateExtraMapEditor();
+        game.input.prevActions.smartRight = true;
+        game.input.actions.smartRight = false;
+        game.input.prevActions.confirm = false;
+        game.input.actions.confirm = true;
+        game.updateExtraMapEditor();
+
+        expect(game.editor.selectedTile).toBe(1);
+        expect(game.level.getTile(1, 0)).toBe(1);
+    });
+
+    it('discards extra map editing through the hold cancel action', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'EXTRA_MAP';
+        for (let stage = 0; stage < 10; stage++) {
+            game.stageClearHistory[stage] = true;
+        }
+
+        game.openExtraMapActionMenu(0);
+        game.executeExtraMapAction(1);
+        game.startExtraMapEdit(0);
+        game.level.setTile(1, 0, 1);
+
+        game.input.setVirtualKey('x', true);
+        for (let i = 0; i < game.giveUpMax; i++) {
+            game.updateExtraMapEditor();
+        }
+
+        expect(game.state).toBe('EXTRA_MAP');
+        expect(game.extraMaps[0].stage[0][1]).toBe(0);
     });
 
     it('saves edited stages and drops clear status when the stage changed', () => {
@@ -806,7 +1011,7 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.extraMaps[0].cleared = true;
         game.startExtraMapEdit(0);
         game.level.setTile(1, 0, 1);
@@ -816,7 +1021,9 @@ describe('Game Class', () => {
         expect(game.state).toBe('EXTRA_MAP');
         expect(game.extraMaps[0].stage[0][1]).toBe(1);
         expect(game.extraMaps[0].cleared).toBe(false);
-        expect(JSON.parse(localStorage.getItem('magic-crystal')).extraMaps.d.maps[0].stage[0][1]).toBe(1);
+        const savedMap = JSON.parse(localStorage.getItem('magic-crystal')).extraMaps.d.maps[0];
+        expect(savedMap).not.toHaveProperty('stage');
+        expect(decodeSharedMap(savedMap.mapData).tiles[0][1]).toBe(1);
     });
 
     it('discards edited stages without saving them', () => {
@@ -827,7 +1034,7 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
         game.startExtraMapEdit(0);
         game.level.setTile(1, 0, 1);
 
@@ -845,7 +1052,7 @@ describe('Game Class', () => {
         }
 
         game.openExtraMapActionMenu(0);
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
 
         expect(game.state).toBe('EDITOR');
         expect(game.extraMaps).toHaveLength(HELD_MAP_LIMIT);
@@ -863,21 +1070,27 @@ describe('Game Class', () => {
         game.state = 'EXTRA_MAP';
         game.openExtraMapActionMenu(0);
 
-        expect(game.getExtraMapActionItems()[0]).toMatchObject({ id: 'create', enabled: false });
+        expect(game.getExtraMapActionItems()[1]).toMatchObject({ id: 'create', enabled: false });
 
-        game.executeExtraMapAction(0);
+        game.executeExtraMapAction(1);
 
         expect(game.extraMaps).toEqual(new Array(HELD_MAP_LIMIT).fill(null));
-        expect(game.extraMapActionMenu).toMatchObject({ slotIndex: 0, cursor: 0 });
+        expect(game.extraMapFunctionCursor).toBe(1);
     });
 
-    it('closes the extra map action menu with the cancel action', () => {
+    it('cycles extra map functions with smart keys', () => {
         const game = new Game(mockCanvas, mockAssets);
-        game.openExtraMapActionMenu(0);
+        game.state = 'EXTRA_MAP';
 
-        game.executeExtraMapAction(2);
+        game.input.actions.smartRight = true;
+        game.updateExtraMap();
+        expect(game.extraMapFunctionCursor).toBe(1);
 
-        expect(game.extraMapActionMenu).toBeNull();
+        game.input.prevActions.smartRight = true;
+        game.input.actions.smartRight = false;
+        game.input.actions.smartLeft = true;
+        game.updateExtraMap();
+        expect(game.extraMapFunctionCursor).toBe(0);
     });
 
     it('limits max difficulty by normal stage clear progress', () => {

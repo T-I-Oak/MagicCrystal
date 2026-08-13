@@ -3,11 +3,17 @@ import { Game } from './Game.js';
 import { setupLanguageSelector } from '../../GameWorksOAK/src/lib/core/i18n.js';
 import { SUPPORTED_LANGUAGES } from './i18nText.js';
 import { createSettingsLayout, isSettingsSliderHit } from './settingsLayout.js';
-import { createEditorMenuLayout, createEditorTileGuideLayout } from './editorLayout.js';
+import {
+    createEditorControlsModalLayout,
+    createEditorDifficultyModalLayout,
+    createEditorFunctionBarLayout,
+    createEditorTileGuideLayout
+} from './editorLayout.js';
 import {
     createBackButtonLayout,
-    createExtraMapActionMenuLayout,
     createExtraMapDeleteConfirmLayout,
+    createExtraMapFunctionBarLayout,
+    createSelectStageFunctionBarLayout,
     createSelectStageGridLayout,
     createTitleMenuLayout
 } from './uiLayout.js';
@@ -168,6 +174,7 @@ window.onload = async () => {
 
         if (game.state === 'PLAY' || game.state === 'EDITOR') {
             if (game.state === 'EDITOR') {
+                if (game.isEditingExtraMap()) return;
                 const tx = Math.floor(x / 40);
                 const ty = Math.floor((y - 80) / 40);
                 if (tx >= 0 && tx < game.level.cols && ty >= 0 && ty < game.level.rows) {
@@ -231,7 +238,7 @@ window.onload = async () => {
         ratio = Math.max(0, Math.min(1, ratio));
 
         if (index === 0) { // SPEED
-            game.targetFPS = Math.round(30 + ratio * (60 - 30));
+            game.targetFPS = Math.round(10 + ratio * (60 - 10));
             game.deltaTime = 1000 / game.targetFPS;
             game.saveSettings();
         } else if (index === 3) { // PAD SIZE
@@ -264,6 +271,8 @@ window.onload = async () => {
         game.input.setVirtualKey('ArrowDown', false);
         game.input.setVirtualKey('ArrowLeft', false);
         game.input.setVirtualKey('ArrowRight', false);
+        game.input.setVirtualKey('q', false);
+        game.input.setVirtualKey('e', false);
         game.input.isPointerDown = false;
     };
 
@@ -282,8 +291,17 @@ window.onload = async () => {
 
     const getPointerDownActions = () => {
         if (game.state === 'SELECT') {
+            const functionBar = createSelectStageFunctionBarLayout(canvas.width, canvas.height, game.getSelectStageActionItems());
+            const actions = [
+                createRectAction(functionBar.back, () => game.input.setVirtualKey('x', true)),
+                createRectAction(functionBar.smartLeft, () => {}),
+                createRectAction(functionBar.smartRight, () => {})
+            ];
+            functionBar.items.forEach((item) => {
+                actions.push(createRectAction(item.rect, () => {}));
+            });
             return [
-                createRectAction(createBackButtonLayout(canvas.height), () => game.input.setVirtualKey('x', true))
+                ...actions
             ];
         }
 
@@ -294,35 +312,51 @@ window.onload = async () => {
         }
 
         if (game.state === 'EXTRA_MAP') {
-            if (game.extraMapDownloadFullModalOpen || game.extraMapDeleteConfirm) {
+            if (game.extraMapDeleteConfirm || game.extraMapDownloadFullModalOpen) {
                 return [
                     createRectAction({ x: 0, y: 0, width: canvas.width, height: canvas.height }, () => {})
                 ];
             }
-            return [
-                createRectAction(createBackButtonLayout(canvas.height), () => game.input.setVirtualKey('x', true))
+            const functionBar = createExtraMapFunctionBarLayout(canvas.width, canvas.height, game.getExtraMapActionItems());
+            const actions = [
+                createRectAction(functionBar.back, () => {})
             ];
+            functionBar.items.forEach((item) => {
+                actions.push(createRectAction(item.rect, () => {}));
+            });
+            actions.push(createRectAction(functionBar.smartLeft, () => {}));
+            actions.push(createRectAction(functionBar.smartRight, () => {}));
+            return actions;
         }
 
         if (game.state === 'PLAY' || game.state === 'EDITOR') {
-            if (game.state === 'EDITOR' && game.isEditingExtraMap() && game.extraMapEditorSession.menuOpen) {
-                if (game.extraMapEditorSession.controlsOpen) {
+            if (game.state === 'EDITOR' && game.isEditingExtraMap()) {
+                if (
+                    game.extraMapEditorSession.controlsOpen ||
+                    game.extraMapEditorSession.difficultyOpen
+                ) {
                     return [
                         createRectAction({ x: 0, y: 0, width: canvas.width, height: canvas.height }, () => {})
                     ];
                 }
-                return [
-                    createRectAction({ x: 0, y: 0, width: canvas.width, height: canvas.height }, () => {})
+
+                const functionBar = createEditorFunctionBarLayout(canvas.width, game.getExtraMapEditorFunctionBarItems());
+                const actions = [
+                    createRectAction(functionBar.discard, () => game.input.setVirtualKey('x', true))
                 ];
+                functionBar.items.forEach((item) => {
+                    actions.push(createRectAction(item.rect, () => {}));
+                });
+                const tileGuide = createEditorTileGuideLayout();
+                for (let index = 0; index < tileGuide.itemCount; index++) {
+                    actions.push(createRectAction(tileGuide.getItemRect(index), () => {}));
+                }
+                return actions;
             }
 
             const actions = [
                 createRectAction(createBackButtonLayout(canvas.height, 'playFooter'), () => {
-                    if (game.state === 'EDITOR' && game.isEditingExtraMap()) {
-                        game.openExtraMapEditorMenu();
-                    } else {
-                        game.input.setVirtualKey('x', true);
-                    }
+                    game.input.setVirtualKey('x', true);
                 })
             ];
 
@@ -340,11 +374,15 @@ window.onload = async () => {
 
         if (game.state === 'SETTINGS') {
             const layout = createSettingsLayout(canvas.width);
-            return Array.from({ length: layout.itemCount }, (_, index) => (
+            const actions = Array.from({ length: layout.itemCount }, (_, index) => (
                 createRectAction(layout.getItemRect(index), (point) => {
                     handleSettingsPointerDown(index, layout, point.x);
                 })
             ));
+            actions.push(createRectAction(layout.closeButton, () => {
+                game.input.setVirtualKey('x', true);
+            }));
+            return actions;
         }
 
         return [];
@@ -377,8 +415,6 @@ window.onload = async () => {
                 const midpoint = tx + layout.language.width / 2;
                 game.changeLanguage(x < midpoint ? -1 : 1);
             }
-        } else if (index === 6) {
-            pressVirtualKey('Enter');
         }
     };
 
@@ -394,14 +430,33 @@ window.onload = async () => {
         }
 
         if (game.state === 'SELECT') {
+            const functionBar = createSelectStageFunctionBarLayout(canvas.width, canvas.height, game.getSelectStageActionItems());
+            const actions = [
+                createRectAction(functionBar.smartLeft, () => pressVirtualKey('q')),
+                createRectAction(functionBar.smartRight, () => pressVirtualKey('e'))
+            ];
+            functionBar.items.forEach((item, index) => {
+                actions.push(createRectAction(item.rect, () => {
+                    if (game.selectStageFunctionCursor !== index) {
+                        game.selectStageFunctionCursor = index;
+                        return;
+                    }
+                    game.executeSelectStageAction(index);
+                }));
+            });
+
             const grid = createSelectStageGridLayout();
-            return Array.from({ length: grid.itemCount }, (_, index) => {
-                if (!game.isStageSelectable(index)) return null;
-                return createRectAction(grid.getItemHitRect(index), () => {
+            Array.from({ length: grid.itemCount }, (_, index) => (
+                createRectAction(grid.getItemHitRect(index), () => {
+                    if (game.selectCursor !== index) {
+                        game.selectCursor = index;
+                        return;
+                    }
                     game.selectCursor = index;
-                    pressVirtualKey('Enter');
-                });
-            }).filter(Boolean);
+                    game.executeSelectStageAction(game.selectStageFunctionCursor);
+                })
+            )).forEach((action) => actions.push(action));
+            return actions;
         }
 
         if (game.state === 'SHARED_MAP_LOAD_ERROR') {
@@ -416,8 +471,12 @@ window.onload = async () => {
             if (game.extraMapDeleteConfirm) {
                 const modal = createExtraMapDeleteConfirmLayout(canvas.width, canvas.height);
                 return [
-                    createRectAction(modal.confirmButton, () => game.confirmExtraMapDelete()),
-                    createRectAction(modal.cancelButton, () => game.closeExtraMapDeleteConfirm()),
+                    createRectAction(modal.confirmButton, () => {
+                        game.confirmExtraMapDelete();
+                    }),
+                    createRectAction(modal.cancelButton, () => {
+                        game.closeExtraMapDeleteConfirm();
+                    }),
                     createRectAction({ x: 0, y: 0, width: canvas.width, height: canvas.height }, () => {})
                 ];
             }
@@ -429,56 +488,108 @@ window.onload = async () => {
                     })
                 ];
             }
-            const grid = createSelectStageGridLayout();
-            if (game.extraMapActionMenu) {
-                const items = game.getExtraMapActionItems();
-                const menu = createExtraMapActionMenuLayout(
-                    grid.getItemHitRect(game.extraMapActionMenu.slotIndex),
-                    items.length,
-                    canvas.width,
-                    canvas.height
-                );
-                const actions = items.map((_, index) => (
-                    createRectAction(menu.getItemRect(index), () => game.executeExtraMapAction(index))
-                ));
-                actions.push(createRectAction({ x: 0, y: 0, width: canvas.width, height: canvas.height }, () => {
-                    game.closeExtraMapActionMenu();
-                }));
-                return actions;
-            }
 
-            return Array.from({ length: grid.itemCount }, (_, index) => (
+            const functionBar = createExtraMapFunctionBarLayout(canvas.width, canvas.height, game.getExtraMapActionItems());
+            const actions = [
+                createRectAction(functionBar.smartLeft, () => pressVirtualKey('q')),
+                createRectAction(functionBar.smartRight, () => pressVirtualKey('e')),
+                createRectAction(functionBar.back, () => pressVirtualKey('x'))
+            ];
+            functionBar.items.forEach((item, index) => {
+                actions.push(createRectAction(item.rect, () => {
+                    if (game.extraMapFunctionCursor !== index) {
+                        game.extraMapFunctionCursor = index;
+                        return;
+                    }
+                    game.extraMapFunctionCursor = index;
+                    game.executeExtraMapAction(index);
+                }));
+            });
+
+            const grid = createSelectStageGridLayout();
+            Array.from({ length: grid.itemCount }, (_, index) => (
                 createRectAction(grid.getItemHitRect(index), () => {
+                    if (game.extraMapCursor !== index) {
+                        game.extraMapCursor = index;
+                        return;
+                    }
                     game.extraMapCursor = index;
-                    game.openExtraMapActionMenu(index);
+                    game.executeExtraMapAction(game.extraMapFunctionCursor, index);
                 })
-            ));
+            )).forEach((action) => actions.push(action));
+            return actions;
         }
 
-        if (game.state === 'EDITOR' && game.isEditingExtraMap() && game.extraMapEditorSession.menuOpen) {
+        if (game.state === 'EDITOR' && game.isEditingExtraMap()) {
             if (game.extraMapEditorSession.controlsOpen) {
+                const modal = createEditorControlsModalLayout();
                 return [
-                    createRectAction({ x: 0, y: 0, width: canvas.width, height: canvas.height }, () => {
+                    createRectAction(modal.closeButton, () => {
                         if (isMoving) return;
                         game.closeExtraMapEditorControls();
-                    })
+                    }),
+                    createRectAction({ x: 0, y: 0, width: canvas.width, height: canvas.height }, () => {})
                 ];
             }
 
-            const menu = createEditorMenuLayout(canvas.width);
-            const actions = Array.from({ length: menu.itemCount }, (_, index) => (
-                createRectAction(menu.getItemRect(index), (point) => {
-                    game.extraMapEditorSession.menuCursor = index;
-                    const item = game.getExtraMapEditorMenuItems()[index];
-                    if (item?.id === 'difficulty') {
-                        const midpoint = menu.value.x + menu.value.width / 2;
-                        game.changeExtraMapEditDifficulty(point.x < midpoint ? -1 : 1);
-                    } else {
-                        game.executeExtraMapEditorMenuAction(index);
+            if (game.extraMapEditorSession.difficultyOpen) {
+                const modal = createEditorDifficultyModalLayout(canvas.width, canvas.height);
+                const actions = [
+                    createRectAction(modal.valueRect, (point) => {
+                        game.extraMapEditorSession.difficultyCursor = 0;
+                        if (
+                            point.x >= modal.valueControlRect.x &&
+                            point.x <= modal.valueControlRect.x + modal.valueControlRect.width
+                        ) {
+                            const midpoint = modal.valueControlRect.x + modal.valueControlRect.width / 2;
+                            const maxDifficulty = game.getMaxExtraMapDifficulty();
+                            game.extraMapEditorSession.difficulty = point.x < midpoint
+                                ? Math.max(1, game.extraMapEditorSession.difficulty - 1)
+                                : Math.min(maxDifficulty, game.extraMapEditorSession.difficulty + 1);
+                        }
+                    }),
+                    createRectAction(modal.closeButton, () => {
+                        game.closeExtraMapEditorDifficultyModal();
+                    })
+                ];
+                actions.push(createRectAction({ x: 0, y: 0, width: canvas.width, height: canvas.height }, () => {}));
+                return actions;
+            }
+
+            const functionBar = createEditorFunctionBarLayout(canvas.width, game.getExtraMapEditorFunctionBarItems());
+            const actions = [
+                createRectAction(functionBar.smartLeft, () => pressVirtualKey('q')),
+                createRectAction(functionBar.smartRight, () => pressVirtualKey('e'))
+            ];
+            functionBar.items.forEach((item) => {
+                actions.push(createRectAction(item.rect, () => {
+                    if (game.getExtraMapEditorFunctionBarId() !== item.id) {
+                        game.selectExtraMapEditorFunctionBarItem(item.id);
+                        return;
                     }
-                })
-            ));
-            actions.push(createRectAction({ x: 0, y: 0, width: canvas.width, height: canvas.height }, () => {}));
+                    game.executeExtraMapEditorFunction();
+                }));
+            });
+
+            const tileGuide = createEditorTileGuideLayout();
+            for (let index = 0; index < tileGuide.itemCount; index++) {
+                actions.push(createRectAction(tileGuide.getItemRect(index), () => {
+                    game.selectExtraMapEditorTile(index);
+                }));
+            }
+
+            for (let y = 0; y < game.level.rows; y++) {
+                for (let x = 0; x < game.level.cols; x++) {
+                    actions.push(createRectAction({
+                        x: x * 40,
+                        y: 80 + y * 40,
+                        width: 40,
+                        height: 40
+                    }, () => {
+                        game.tapExtraMapEditorCell(x, y);
+                    }));
+                }
+            }
             return actions;
         }
 
