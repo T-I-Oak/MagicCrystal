@@ -14,7 +14,12 @@ export const SETTINGS_LAYOUT = {
     switchRightOffsetX: 280,
     switchWidth: 240,
     languageRightOffsetX: 250,
-    languageWidth: 210
+    languageWidth: 210,
+    buttonWidth: 220,
+    buttonHeight: 44,
+    buttonRightPadding: 44,
+    buttonBottomPadding: 16,
+    itemCount: 6
 };
 
 export function createSettingsLayout(canvasWidth) {
@@ -28,12 +33,22 @@ export function createSettingsLayout(canvasWidth) {
             width: SETTINGS_LAYOUT.boxWidth,
             height: SETTINGS_LAYOUT.boxHeight
         },
+        itemCount: SETTINGS_LAYOUT.itemCount,
         title: {
             x: canvasWidth / 2,
             y: SETTINGS_LAYOUT.boxY + SETTINGS_LAYOUT.titleOffsetY
         },
         getItemY(index) {
             return itemYStart + index * SETTINGS_LAYOUT.itemGap;
+        },
+        getItemRect(index) {
+            const itemY = itemYStart + index * SETTINGS_LAYOUT.itemGap;
+            return {
+                x: boxX,
+                y: itemY - SETTINGS_LAYOUT.itemHitHalfHeight,
+                width: SETTINGS_LAYOUT.boxWidth,
+                height: SETTINGS_LAYOUT.itemHitHalfHeight * 2
+            };
         },
         getItemIndexAt(x, y) {
             if (
@@ -51,7 +66,7 @@ export function createSettingsLayout(canvasWidth) {
                 return -1;
             }
 
-            return index;
+            return index >= 0 && index < SETTINGS_LAYOUT.itemCount ? index : -1;
         },
         markerX: boxX + SETTINGS_LAYOUT.labelOffsetX - SETTINGS_LAYOUT.markerOffsetX,
         labelX: boxX + SETTINGS_LAYOUT.labelOffsetX,
@@ -66,6 +81,12 @@ export function createSettingsLayout(canvasWidth) {
         language: {
             x: boxX + SETTINGS_LAYOUT.boxWidth - SETTINGS_LAYOUT.languageRightOffsetX,
             width: SETTINGS_LAYOUT.languageWidth
+        },
+        closeButton: {
+            x: boxX + SETTINGS_LAYOUT.boxWidth - SETTINGS_LAYOUT.buttonRightPadding - SETTINGS_LAYOUT.buttonWidth,
+            y: SETTINGS_LAYOUT.boxY + SETTINGS_LAYOUT.boxHeight - SETTINGS_LAYOUT.buttonBottomPadding - SETTINGS_LAYOUT.buttonHeight,
+            width: SETTINGS_LAYOUT.buttonWidth,
+            height: SETTINGS_LAYOUT.buttonHeight
         }
     };
 }

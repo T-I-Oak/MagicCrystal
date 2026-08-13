@@ -32,7 +32,7 @@ export class Level {
     applyEarthquake() {
         for (let y = 0; y < this.rows; y++) {
             for (let x = 0; x < this.cols; x++) {
-                // User Logic: Index 2(Dirt2/ID6) -> Dirt(1). Index 3(Rock2/ID7) -> Rock(2).
+                // User Logic: Soil Memory (6) -> Soil (1), Rock Memory (7) -> Rock (2).
                 if (this.data[y][x] === 6) this.data[y][x] = 1;
                 else if (this.data[y][x] === 7) this.data[y][x] = 2;
             }
@@ -43,12 +43,28 @@ export class Level {
 export class LevelEditor {
     constructor(level) {
         this.level = level;
-        this.cx = 4; // Cursor X
-        this.cy = 4; // Cursor Y
+        const portal = this.findPortal();
+        this.cx = portal.x; // Cursor X
+        this.cy = portal.y; // Cursor Y
         this.selectedTile = 1;
         this.cooldown = 0;
     }
+
+    findPortal() {
+        for (let y = 0; y < this.level.rows; y++) {
+            for (let x = 0; x < this.level.cols; x++) {
+                if (this.level.getTile(x, y) === 3) return { x, y };
+            }
+        }
+        return { x: 0, y: 0 };
+    }
+
     update(input) {
+        this.updateCursor(input);
+        this.updatePlacement(input);
+    }
+
+    updateCursor(input) {
         if (this.cooldown > 0) this.cooldown--;
 
         // Movement using stick (includes arrow keys, WASD, and numpad)
@@ -70,18 +86,19 @@ export class LevelEditor {
                 this.cooldown = 5;
             }
         }
+    }
 
+    updatePlacement(input) {
         // Tile Selection & Placement with regular number keys (not numpad)
         for (let i = 0; i <= 7; i++) {
             const digitKey = 'Digit' + i;
             if (input.keys[digitKey]) {
-                this.selectedTile = i;
-                this.placeTile(i); // Immediate Placement
+                this.selectTileAndPlace(i); // Immediate Placement
             }
         }
 
-        // A button: Place current item
-        if (input.isJustPressed('jump')) {
+        // Confirm button: Place current item
+        if (input.isJustPressed('confirm')) {
             this.placeTile(this.selectedTile);
         }
 
@@ -94,6 +111,11 @@ export class LevelEditor {
         if (input.isJustPressed('smartRight')) {
             this.selectedTile = (this.selectedTile + 1) % 8;
         }
+    }
+
+    selectTileAndPlace(tileId) {
+        this.selectedTile = tileId;
+        this.placeTile(tileId);
     }
 
     placeTile(tileId) {

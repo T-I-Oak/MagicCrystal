@@ -26,7 +26,8 @@ export class Assets {
             const loadImageTasks = [
                 this.loadImage('assets/player.png?v=' + ts).then(img => this.splitPlayer(img)),
                 this.loadImage('assets/tiles.png?v=' + ts).then(img => this.splitTiles(img)),
-                this.loadImage('assets/title.png?v=' + ts).then(img => this.title = img)
+                this.loadImage('assets/title.png?v=' + ts).then(img => this.title = img),
+                this.loadImage('assets/logo.png?v=' + ts).then(img => this.logo = img)
             ];
 
             // Execute all loading tasks
@@ -91,7 +92,7 @@ export class Assets {
 
 
         // --- Tiles ---
-        // 1:Dirt, 2:Rock, 3:Portal, 4:Red, 5:Blue, 6:DirtT, 7:RockT
+        // 1:Soil, 2:Rock, 3:Portal, 4:Recall Ruby, 5:Stasis Sapphire, 6:Soil Memory, 7:Rock Memory
         const drawTile = (id, color, style = 'solid') => {
             const { c, ctx } = createC();
             ctx.fillStyle = color;
@@ -113,12 +114,12 @@ export class Assets {
             this.tiles[id] = c;
         };
 
-        drawTile(1, '#8B4513'); // Dirt
+        drawTile(1, '#8B4513'); // Soil
         drawTile(2, '#808080', 'crack'); // Rock
         drawTile(3, '#4B0082', 'portal'); // Portal
         drawTile(4, '#ff0000', 'crystal'); // Red
         drawTile(5, '#0000ff', 'crystal'); // Blue
-        drawTile(6, '#A0522D'); // Dirt2
+        drawTile(6, '#A0522D'); // Soil Memory
         drawTile(7, '#696969'); // Rock2
     }
 
@@ -127,13 +128,13 @@ export class Assets {
         const size = 40; // Target Size
         const mapping = [
             { x: 0, y: 0 }, // 0: Background
-            { x: 1, y: 0 }, // 1: Dirt
+            { x: 1, y: 0 }, // 1: Soil
             { x: 2, y: 0 }, // 2: Rock
             { x: 3, y: 0 }, // 3: Portal
             { x: 0, y: 1 }, // 4: Red
             { x: 1, y: 1 }, // 5: Blue
-            { x: 2, y: 1 }, // 6: Dirt Trace
-            { x: 3, y: 1 }, // 7: Rock Trace
+            { x: 2, y: 1 }, // 6: Soil Memory
+            { x: 3, y: 1 }, // 7: Rock Memory
             { x: 0, y: 2 }, // 8: Editor Cursor
         ];
 

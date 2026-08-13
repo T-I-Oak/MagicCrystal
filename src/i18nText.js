@@ -4,10 +4,28 @@ export const SUPPORTED_LANGUAGES = ['ja', 'en'];
 
 const TEXT = {
     common: {
+        ok: {
+            'lang-store': {
+                ja: 'OK',
+                en: 'OK'
+            }
+        },
+        cancel: {
+            'lang-store': {
+                ja: 'CANCEL',
+                en: 'CANCEL'
+            }
+        },
         back: {
             'lang-store': {
                 ja: 'BACK',
                 en: 'BACK'
+            }
+        },
+        close: {
+            'lang-store': {
+                ja: 'CLOSE',
+                en: 'CLOSE'
             }
         },
         languageNames: {
@@ -39,16 +57,386 @@ const TEXT = {
                     en: 'HOW TO PLAY'
                 }
             },
-            mapEditor: {
+            extraMap: {
                 'lang-store': {
-                    ja: 'MAP EDITOR',
-                    en: 'MAP EDITOR'
+                    ja: 'EXTRA MAP',
+                    en: 'EXTRA MAP'
+                }
+            },
+            unavailable: {
+                'lang-store': {
+                    ja: '???',
+                    en: '???'
                 }
             },
             settings: {
                 'lang-store': {
                     ja: 'SETTINGS',
                     en: 'SETTINGS'
+                }
+            }
+        }
+    },
+    extraMap: {
+        title: {
+            'lang-store': {
+                ja: 'EXTRA MAP',
+                en: 'EXTRA MAP'
+            }
+        },
+        placeholder: {
+            'lang-store': {
+                ja: 'EXTRA MAP COMING SOON',
+                en: 'EXTRA MAP COMING SOON'
+            }
+        },
+        empty: {
+            'lang-store': {
+                ja: 'EMPTY',
+                en: 'EMPTY'
+            }
+        },
+        actions: {
+            play: {
+                'lang-store': {
+                    ja: 'PLAY',
+                    en: 'PLAY'
+                }
+            },
+            edit: {
+                'lang-store': {
+                    ja: 'EDIT',
+                    en: 'EDIT'
+                }
+            },
+            copy: {
+                'lang-store': {
+                    ja: 'COPY',
+                    en: 'COPY'
+                }
+            },
+            create: {
+                'lang-store': {
+                    ja: 'CREATE',
+                    en: 'CREATE'
+                }
+            },
+            paste: {
+                'lang-store': {
+                    ja: 'PASTE',
+                    en: 'PASTE'
+                }
+            },
+            share: {
+                'lang-store': {
+                    ja: 'SHARE',
+                    en: 'SHARE'
+                }
+            },
+            delete: {
+                'lang-store': {
+                    ja: 'DELETE',
+                    en: 'DELETE'
+                }
+            },
+            favorite: {
+                'lang-store': {
+                    ja: 'FAVORITE',
+                    en: 'FAVORITE'
+                }
+            },
+            unfavorite: {
+                'lang-store': {
+                    ja: 'UNFAVORITE',
+                    en: 'UNFAVORITE'
+                }
+            },
+            controls: {
+                'lang-store': {
+                    ja: 'HOW TO EDIT',
+                    en: 'HOW TO EDIT'
+                }
+            },
+            help: {
+                'lang-store': {
+                    ja: 'HELP',
+                    en: 'HELP'
+                }
+            },
+            difficultyShort: {
+                'lang-store': {
+                    ja: 'DIFFICULTY',
+                    en: 'DIFFICULTY'
+                }
+            },
+            saveShort: {
+                'lang-store': {
+                    ja: 'SAVE',
+                    en: 'SAVE'
+                }
+            },
+            discardShort: {
+                'lang-store': {
+                    ja: 'DISCARD',
+                    en: 'DISCARD'
+                }
+            }
+        },
+        notice: {
+            editLocked: {
+                'lang-store': {
+                    ja: '通常マップを10ステージクリアすると使用できます',
+                    en: 'Clear 10 normal stages to unlock editing'
+                }
+            },
+            noCopiedStage: {
+                'lang-store': {
+                    ja: 'コピー済みステージがありません',
+                    en: 'No copied stage'
+                }
+            },
+            shareRequiresClear: {
+                'lang-store': {
+                    ja: 'クリア済みマップのみシェアできます',
+                    en: 'Clear the map before sharing'
+                }
+            },
+            shareFailed: {
+                'lang-store': {
+                    ja: '共有を実行できませんでした',
+                    en: 'Sharing could not be started'
+                }
+            },
+            favoriteDeleteProtected: {
+                'lang-store': {
+                    ja: 'お気に入りマップは削除できません',
+                    en: 'Favorite maps cannot be deleted'
+                }
+            }
+        },
+        shareConfirm: {
+            title: {
+                'lang-store': {
+                    ja: 'MAP SHARE',
+                    en: 'SHARE MAP'
+                }
+            },
+            lines: {
+                'lang-store': {
+                    ja: [
+                        'マップ画像をクリップボードにコピーしました。',
+                        'X を開いて貼り付けますか？'
+                    ],
+                    en: [
+                        'The map image has been copied to the clipboard.',
+                        'Open X and paste it?'
+                    ]
+                }
+            },
+            openX: {
+                'lang-store': {
+                    ja: 'OPEN X',
+                    en: 'OPEN X'
+                }
+            },
+            close: {
+                'lang-store': {
+                    ja: 'CLOSE',
+                    en: 'CLOSE'
+                }
+            }
+        },
+        shareTextPrompt: {
+            'lang-store': {
+                ja: '自作ステージに挑戦してみて！',
+                en: 'Play my custom stage!'
+            }
+        },
+        shareDifficultyLabel: {
+            'lang-store': {
+                ja: '難易度',
+                en: 'Difficulty'
+            }
+        },
+        loadError: {
+            title: {
+                'lang-store': {
+                    ja: 'MAP LOAD FAILED',
+                    en: 'MAP LOAD FAILED'
+                }
+            },
+            lines: {
+                'lang-store': {
+                    ja: [
+                        '共有マップを読み込めませんでした。',
+                        'URL の map 情報が不正です。'
+                    ],
+                    en: [
+                        'The shared map could not be loaded.',
+                        'The map data in the URL is invalid.'
+                    ]
+                }
+            },
+            close: {
+                'lang-store': {
+                    ja: 'CLOSE',
+                    en: 'CLOSE'
+                }
+            }
+        },
+        downloadFull: {
+            title: {
+                'lang-store': {
+                    ja: 'MAP DOWNLOAD FAILED',
+                    en: 'MAP DOWNLOAD FAILED'
+                }
+            },
+            lines: {
+                'lang-store': {
+                    ja: [
+                        'マップに空きがないためダウンロードできませんでした。',
+                        'マップに空きを作ってからダウンロードしなおしてください。'
+                    ],
+                    en: [
+                        'The map could not be downloaded because there are no empty slots.',
+                        'Create an empty slot, then download it again.'
+                    ]
+                }
+            },
+            close: {
+                'lang-store': {
+                    ja: 'CLOSE',
+                    en: 'CLOSE'
+                }
+            }
+        },
+        deleteConfirm: {
+            title: {
+                'lang-store': {
+                    ja: 'DELETE MAP?',
+                    en: 'DELETE MAP?'
+                }
+            },
+            lines: {
+                'lang-store': {
+                    ja: [
+                        'この保持マップを削除します。',
+                        '削除すると元に戻せません。'
+                    ],
+                    en: [
+                        'Delete this saved map.',
+                        'This cannot be undone.'
+                    ]
+                }
+            },
+            delete: {
+                'lang-store': {
+                    ja: 'DELETE',
+                    en: 'DELETE'
+                }
+            },
+            cancel: {
+                'lang-store': {
+                    ja: 'CANCEL',
+                    en: 'CANCEL'
+                }
+            }
+        },
+        editor: {
+            difficulty: {
+                'lang-store': {
+                    ja: 'DIFFICULTY',
+                    en: 'DIFFICULTY'
+                }
+            },
+            difficultySettingsTitle: {
+                'lang-store': {
+                    ja: 'DIFFICULTY SETTINGS',
+                    en: 'DIFFICULTY SETTINGS'
+                }
+            },
+            difficultyDescriptions: {
+                'lang-store': {
+                    ja: [
+                        '操作やルート判断がシンプルで、気軽に遊べる難しさ。',
+                        'ルート選択を少し考える必要がある難しさ。',
+                        'タイミングとルート選択を考える必要がある難しさ。',
+                        '手順の見落としが失敗につながりやすい難しさ。',
+                        '正確な操作と深い読みが必要な高難度。'
+                    ],
+                    en: [
+                        'Easy to play, with simple controls and route choices.',
+                        'Requires a little route planning.',
+                        'Requires timing and route planning.',
+                        'Mistakes in the route or order are costly.',
+                        'Very hard, requiring precise control and careful planning.'
+                    ]
+                }
+            },
+            controls: {
+                title: {
+                    'lang-store': {
+                        ja: '- HOW TO EDIT -',
+                        en: '- HOW TO EDIT -'
+                    }
+                },
+                close: {
+                    'lang-store': {
+                        ja: 'CLOSE',
+                        en: 'CLOSE'
+                    }
+                },
+                flowTitle: {
+                    'lang-store': {
+                        ja: '基本の流れ',
+                        en: 'Basic Flow'
+                    }
+                },
+                flowLines: {
+                    'lang-store': {
+                        ja: [
+                            '編集カーソルを動かして、変更したいマスを選びます。',
+                            'スマートキーで HELP / 地形 / DIFFICULTY / SAVE を選びます。',
+                            '地形選択中に決定キーを押すと、そのマスの地形が変わります。',
+                            'フルキーの 0 から 7 の各キーを押すと、地形選択と配置を同時に行えます。'
+                        ],
+                        en: [
+                            'Move the edit cursor to choose the tile you want to change.',
+                            'Use the Smart keys to choose HELP, terrain, DIFFICULTY, or SAVE.',
+                            'When terrain is selected, press Confirm to change the selected tile.',
+                            'Press any full keyboard number key from 0 through 7 to select and place terrain directly.'
+                        ]
+                    }
+                },
+                actions: {
+                    'lang-store': {
+                        ja: [
+                            ['編集カーソルの移動', '◀ / ▶ / ▲ / ▼', '左 / 右 / 上 / 下移動キーで、変更したいマスを選びます。'],
+                            ['機能の選択', '↖ / ↗', 'スマート左 / 右キーで、HELP、地形、DIFFICULTY、SAVE を切り替えます。'],
+                            ['選択機能の実行', 'A', '決定キーで、選択中の地形配置、説明表示、難易度設定、保存を実行します。'],
+                            ['編集の破棄', 'B', 'キャンセルキー長押しで、編集内容を破棄して終了します。'],
+                            ['地形の直接配置', '0 / 1 / 2 / 3 / 4 / 5 / 6 / 7', 'Keyboard のフルキー 0 から 7 の各キーで、対応する地形を直接配置できます。']
+                        ],
+                        en: [
+                            ['Move Edit Cursor', '◀ / ▶ / ▲ / ▼', 'Use the left / right / up / down keys to choose the tile to change.'],
+                            ['Select Function', '↖ / ↗', 'Use the Smart Left / Right keys to switch HELP, terrain, DIFFICULTY, or SAVE.'],
+                            ['Run Function', 'A', 'Use the Confirm key to place terrain, show help, set difficulty, or save.'],
+                            ['Discard Edit', 'B', 'Hold the Cancel key to discard changes and exit.'],
+                            ['Place Directly', '0 / 1 / 2 / 3 / 4 / 5 / 6 / 7', 'Use any full keyboard number key from 0 through 7 to place the matching terrain directly.']
+                        ]
+                    }
+                },
+                footnotes: {
+                    'lang-store': {
+                        ja: [
+                            '各操作キーが Keyboard / Numpad / Gamepad のどれに対応するかは、HOW TO PLAY の操作キー対応表を参照してください。',
+                            'DIFFICULTY SETTINGS 表示中は、左右で難易度を変更し、Bで閉じます。'
+                        ],
+                        en: [
+                            'See the Control Key Map in HOW TO PLAY for Keyboard / Numpad / Gamepad mappings.',
+                            'In DIFFICULTY SETTINGS, use left/right to change difficulty, then press B to close.'
+                        ]
+                    }
                 }
             }
         }
@@ -132,8 +520,8 @@ const TEXT = {
         },
         tapToBack: {
             'lang-store': {
-                ja: 'TAP TO BACK',
-                en: 'TAP TO BACK'
+                ja: 'BACK',
+                en: 'BACK'
             }
         },
         scrollMore: {
@@ -195,6 +583,14 @@ const TEXT = {
                     en: '■ Terrain'
                 }
             },
+            empty: {
+                name: {
+                    'lang-store': {
+                        ja: '空き地',
+                        en: 'Empty'
+                    }
+                }
+            },
             portal: {
                 name: {
                     'lang-store': {
@@ -223,7 +619,7 @@ const TEXT = {
                 name: {
                     'lang-store': {
                         ja: '回帰の紅晶',
-                        en: 'Red Crystal of Return'
+                        en: 'Recall Ruby'
                     }
                 },
                 lines: {
@@ -238,7 +634,7 @@ const TEXT = {
                         en: [
                             'A crystal that calls back the "past memory" of nearby ground.',
                             'After you take it, broken terrain returns when the countdown ends.',
-                            'Taking another Red Crystal of Return during the countdown',
+                            'Taking another Recall Ruby during the countdown',
                             'extends the time before the terrain changes.',
                             'After collection, its tile becomes Soil Memory.'
                         ]
@@ -249,7 +645,7 @@ const TEXT = {
                 name: {
                     'lang-store': {
                         ja: '固定の蒼晶',
-                        en: 'Blue Crystal of Fixing'
+                        en: 'Stasis Sapphire'
                     }
                 },
                 lines: {
@@ -285,7 +681,7 @@ const TEXT = {
                         ],
                         en: [
                             'Terrain that can be broken.',
-                            'While under the effect of a Red Crystal of Return,',
+                            'While under the effect of a Recall Ruby,',
                             'it restores its original form after the countdown.'
                         ]
                     }
@@ -329,7 +725,7 @@ const TEXT = {
                             '赤の魔力が続く限り、何度でも再生します。'
                         ],
                         en: [
-                            'Terrain left behind by the Red Crystal of Return.',
+                            'Terrain left behind by the Recall Ruby.',
                             'When the countdown ends,',
                             'it restores the Soil that once existed there.',
                             'As long as the red magic remains, it can return again and again.'
@@ -353,7 +749,7 @@ const TEXT = {
                             '破壊も再生も起こりません。'
                         ],
                         en: [
-                            'Terrain transformed by the Blue Crystal of Fixing.',
+                            'Terrain transformed by the Stasis Sapphire.',
                             'The flow of time has been completely locked.',
                             'This terrain will never change again,',
                             'and it can neither be broken nor restored.'
@@ -395,43 +791,75 @@ const TEXT = {
                     en: '■ Controls'
                 }
             },
+            definitionsTitle: {
+                'lang-store': {
+                    ja: '操作キーの定義',
+                    en: 'Control Key Definitions'
+                }
+            },
+            definitions: {
+                'lang-store': {
+                    ja: [
+                        ['左移動キー / 右移動キー', '通常はカーソルや選択位置を左右に動かします。ゲーム中はキャラクターを左右に移動します。'],
+                        ['上移動キー', '通常はカーソルや選択位置を上に動かします。ゲーム中はジャンプします。'],
+                        ['下移動キー', '通常はカーソルや選択位置を下に動かします。ゲーム中は向き反転します。'],
+                        ['決定キー', '通常は選択中の項目を決定します。ゲーム中は穴掘りを行います。'],
+                        ['スマート左キー / スマート右キー', 'ゲーム中は指定方向にスマートジャンプします。'],
+                        ['キャンセルキー', '戻る、閉じる、メニューを開くなどの文脈操作に使います。長押しが必要な画面では戻る/リタイアを実行します。']
+                    ],
+                    en: [
+                        ['Left / Right key', 'Usually moves the cursor or selection left/right. In play, moves the character left/right.'],
+                        ['Up key', 'Usually moves the cursor or selection up. In play, jumps.'],
+                        ['Down key', 'Usually moves the cursor or selection down. In play, turns around.'],
+                        ['Confirm key', 'Usually confirms the selected item. In play, digs.'],
+                        ['Smart Left / Smart Right key', 'In play, performs a smart jump in the selected direction.'],
+                        ['Cancel key', 'Used by context to go back, close, or open a menu. On hold screens, performs back/retire.']
+                    ]
+                }
+            },
+            mappingTitle: {
+                'lang-store': {
+                    ja: '操作キー対応表',
+                    en: 'Control Key Map'
+                }
+            },
             headers: {
                 'lang-store': {
-                    ja: ['操作項目', 'WASD / 矢印', 'テンキー', 'ソフトパッド', 'Gamepad'],
-                    en: ['Action', 'WASD / Arrows', 'Numpad', 'Soft Pad', 'Gamepad']
+                    ja: ['操作キー', 'Soft Pad', 'Keyboard', 'Numpad', 'Gamepad'],
+                    en: ['Control Key', 'Soft Pad', 'Keyboard', 'Numpad', 'Gamepad']
                 }
             },
             rows: {
                 'lang-store': {
                     ja: [
-                        ['左右移動', 'A / D / ← / →', '4 / 6', '◀ / ▶', 'Stick / 十字L/R'],
-                        ['ジャンプ※1', 'W / ↑', '8', '▲', '十字上'],
-                        ['Sジャンプ※2', 'Q / E', '7 / 9', '↖ / ↗', 'L1 / R1'],
-                        ['向き反転', 'S / ↓', '2 / 5', '▼', '十字下'],
-                        ['穴掘り', 'Space / Z', '1', 'A', 'A'],
-                        ['リタイア※3', 'X / (長押し)', '3 / (長押し)', 'B / (長押し)', 'B / (長押し)']
+                        ['左移動キー', '◀', 'A / ←', '4', 'D-pad / stick Left'],
+                        ['右移動キー', '▶', 'D / →', '6', 'D-pad / stick Right'],
+                        ['上移動キー', '▲', 'W / ↑', '8', 'D-pad / stick Up'],
+                        ['下移動キー', '▼', 'S / ↓', '2 / 5', 'D-pad / stick Down'],
+                        ['決定キー', 'A', 'Space / Z', '1', 'A'],
+                        ['スマート左キー', '↖', 'Q', '7', 'L1'],
+                        ['スマート右キー', '↗', 'E', '9', 'R1'],
+                        ['キャンセルキー', 'B', 'X', '3', 'B']
                     ],
                     en: [
-                        ['Move', 'A / D / ← / →', '4 / 6', '◀ / ▶', 'Stick / D-pad L/R'],
-                        ['Jump*1', 'W / ↑', '8', '▲', 'D-pad Up'],
-                        ['Smart Jump*2', 'Q / E', '7 / 9', '↖ / ↗', 'L1 / R1'],
-                        ['Turn Around', 'S / ↓', '2 / 5', '▼', 'D-pad Down'],
-                        ['Dig', 'Space / Z', '1', 'A', 'A'],
-                        ['Retire*3', 'X / (Hold)', '3 / (Hold)', 'B / (Hold)', 'B / (Hold)']
+                        ['Left key', '◀', 'A / ←', '4', 'D-pad / stick Left'],
+                        ['Right key', '▶', 'D / →', '6', 'D-pad / stick Right'],
+                        ['Up key', '▲', 'W / ↑', '8', 'D-pad / stick Up'],
+                        ['Down key', '▼', 'S / ↓', '2 / 5', 'D-pad / stick Down'],
+                        ['Confirm key', 'A', 'Space / Z', '1', 'A'],
+                        ['Smart Left key', '↖', 'Q', '7', 'L1'],
+                        ['Smart Right key', '↗', 'E', '9', 'R1'],
+                        ['Cancel key', 'B', 'X', '3', 'B']
                     ]
                 }
             },
             footnotes: {
                 'lang-store': {
                     ja: [
-                        '※1 ジャンプ         : 向いている方向にジャンプします。',
-                        '※2 スマートジャンプ : 指定した方向にジャンプします。',
-                        '※3 リタイア         : ライフを1つ失い、ステージをやり直します。'
+                        'Gamepad の D-pad / Stick は、どちらでも同じ方向キーとして扱います。'
                     ],
                     en: [
-                        '*1 Jump       : Jump in the direction you are facing.',
-                        '*2 Smart Jump : Jump in the specified direction.',
-                        '*3 Retire     : Lose 1 life and restart the stage.'
+                        'Gamepad D-pad and Stick directions are treated as the same direction keys.'
                     ]
                 }
             }
@@ -468,16 +896,22 @@ const TEXT = {
                 en: 'STAGE {number}'
             }
         },
+        extraStage: {
+            'lang-store': {
+                ja: 'EXTRA STAGE {number}',
+                en: 'EXTRA STAGE {number}'
+            }
+        },
         retire: {
             'lang-store': {
-                ja: 'X (B) RETIRE ●',
-                en: 'X (B) RETIRE ●'
+                ja: 'RETIRE',
+                en: 'RETIRE'
             }
         },
         back: {
             'lang-store': {
-                ja: 'X (B) BACK ●',
-                en: 'X (B) BACK ●'
+                ja: 'BACK',
+                en: 'BACK'
             }
         }
     },
@@ -488,16 +922,16 @@ const TEXT = {
                 en: 'SELECT STAGE'
             }
         },
-        stageEditor: {
-            'lang-store': {
-                ja: 'SELECT STAGE (EDITOR)',
-                en: 'SELECT STAGE (EDITOR)'
-            }
-        },
         clear: {
             'lang-store': {
                 ja: 'CLEAR',
                 en: 'CLEAR'
+            }
+        },
+        locked: {
+            'lang-store': {
+                ja: 'LOCKED',
+                en: 'LOCKED'
             }
         }
     }

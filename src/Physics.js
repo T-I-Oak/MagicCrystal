@@ -109,7 +109,7 @@ export class Physics {
             if (game) {
                 game.crystalCount--;
                 game.ES = 0; // Always reset ES first
-                if (tile === 4) game.ES = 60; // Set ES only for Red Crystal (4)
+                if (tile === 4) game.ES = 60; // Set ES only for Recall Ruby (4)
             }
         }
 
@@ -136,8 +136,8 @@ export class Physics {
             const gridX = Math.floor(player.x / 4);
             const gridY = Math.floor(player.y / 4);
             const tileBelow = level.getTile(gridX, gridY + 1);
-            if (tileBelow === 1) { // Only Dig Dirt (1)
-                level.setTile(gridX, gridY + 1, 6); // Turn into Dirt 2 (6)
+            if (tileBelow === 1) { // Only dig Soil (1)
+                level.setTile(gridX, gridY + 1, 6); // Turn into Soil Memory (6)
                 player.sx = 0; player.sy = 0;
                 player.isDigging = true;
                 return;

@@ -2,17 +2,60 @@ import { Input } from './Input.js';
 import { Level, LevelEditor } from './Level.js';
 import { Physics } from './Physics.js';
 import { Renderer } from './Renderer.js';
+import packageData from '../package.json';
 import { getActiveLanguage, onLanguageChange, setLanguage } from '../../GameWorksOAK/src/lib/core/i18n.js';
+import { setAppVersion } from '../../GameWorksOAK/src/lib/utils/env.js';
 import { SUPPORTED_LANGUAGES, t, tr } from './i18nText.js';
+import { GameDataStore } from './gameDataStore.js';
+import { createEmptyStageClearFlags, getUnlockedStageCount, isStageUnlocked, NORMAL_STAGE_COUNT } from './stageUnlock.js';
+import { getNormalStageDifficulty } from './normalStageData.js';
+import {
+    clearHeldMapSlot,
+    createBlankHeldMap,
+    findFirstEmptyHeldMapSlot,
+    setHeldMapFavorite,
+    setHeldMapAtSlot
+} from './extraMapData.js';
+import { decodeSharedMap, encodeSharedMap } from './sharedMapCodec.js';
+import { createExtraMapShareImageBlob, createExtraMapShareImagePayload } from './shareImage.js';
+import { createExtraMapShareText, shareExtraMapImage } from './shareService.js';
 
-const SETTINGS_ITEM_COUNT = 7;
+const SETTINGS_ITEM_COUNT = 6;
+const EXTRA_MAP_EDITOR_FUNCTIONS = [
+    { id: 'controls' },
+    { id: 'tile', tile: 0 },
+    { id: 'tile', tile: 1 },
+    { id: 'tile', tile: 2 },
+    { id: 'tile', tile: 3 },
+    { id: 'tile', tile: 4 },
+    { id: 'tile', tile: 5 },
+    { id: 'tile', tile: 6 },
+    { id: 'tile', tile: 7 },
+    { id: 'difficulty' },
+    { id: 'save' }
+];
+const EDITOR_TILE_NAME_PATHS = [
+    'howToPlay.terrain.empty.name',
+    'howToPlay.terrain.soil.name',
+    'howToPlay.terrain.rock.name',
+    'howToPlay.terrain.portal.name',
+    'howToPlay.terrain.redCrystal.name',
+    'howToPlay.terrain.blueCrystal.name',
+    'howToPlay.terrain.soilMemory.name',
+    'howToPlay.terrain.rockMemory.name'
+];
+const HOW_TO_PLAY_SCROLL_MAX = 2300;
+const EXTRA_MAP_EDITOR_CONTROLS_SCROLL_MAX = 470;
+const SETTINGS_FPS_MIN = 10;
+const SETTINGS_FPS_MAX = 60;
 
 export class Game {
     constructor(canvas, assets) {
+        setAppVersion(packageData.version);
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.assets = assets; // Injected (Loaded)
-        this.version = __APP_VERSION__;
+        this.version = packageData.version;
 
         // HIGH RES UPDATE: 40x40 per tile
         this.tileWidth = 40;
@@ -28,6 +71,7 @@ export class Game {
         this.physics = new Physics();
         this.editor = new LevelEditor(this.level);
         this.renderer = new Renderer(this.ctx, this.assets);
+        this.dataStore = new GameDataStore();
 
         this.targetFPS = 45;
         this.deltaTime = 1000 / this.targetFPS;
@@ -38,7 +82,9 @@ export class Game {
         this.lastStateChange = Date.now();
         this.lives = 3;
         this.maxLives = 9;
-        this.clearedStages = new Array(50).fill(false);
+        this.stageClearHistory = this.dataStore.loadStageProgress().clearedStages;
+        this.extraMaps = this.dataStore.loadExtraMaps().maps;
+        this.currentGameClearedStages = createEmptyStageClearFlags();
         this.stage = 0;
         this.stateTimer = 0;
 
@@ -46,8 +92,20 @@ export class Game {
         // Title menus are split into MAIN and SETTINGS screens
         this.titleCursor = 0;     // MAIN title menu cursor (0..3)
         this.settingsCursor = 0;  // SETTINGS menu cursor
+        this.settingsReturnState = 'TITLE';
         this.selectCursor = 0;
-        this.selectMode = 'PLAY';
+        this.selectStageFunctionCursor = 0;
+        this.extraMapCursor = 0;
+        this.extraMapFunctionCursor = 0;
+        this.extraMapActionMenu = null;
+        this.extraMapEditorSession = null;
+        this.extraMapPlaySession = null;
+        this.extraMapDownloadFullModalOpen = false;
+        this.extraMapDeleteConfirm = null;
+        this.copiedExtraMapStage = null;
+        this.pendingExtraMapShare = null;
+        this.noticeText = '';
+        this.noticeTimer = 0;
         this.supportedLanguages = SUPPORTED_LANGUAGES;
         this.language = getActiveLanguage();
         this.unsubscribeLanguageChange = onLanguageChange((language) => {
@@ -153,12 +211,12 @@ export class Game {
     }
 
     saveLevel() {
-        localStorage.setItem('magic_crystal_level', this.level.serialize());
+        this.dataStore.saveEditorLevel(this.level.serialize());
         this.isSaved = true;
     }
 
     loadLevel() {
-        const data = localStorage.getItem('magic_crystal_level');
+        const data = this.dataStore.loadEditorLevel();
         if (data) {
             this.level.deserialize(data);
             this.resetPlayer();
@@ -189,6 +247,8 @@ export class Game {
 
     update() {
         // Timer Logic
+        this.updateNotice();
+
         if (this.stateTimer > 0) {
             this.stateTimer -= this.deltaTime / 1000;
             if (this.stateTimer <= 0) {
@@ -202,9 +262,15 @@ export class Game {
             case 'SETTINGS': this.updateSettings(); break;
             case 'HOW_TO_PLAY': this.updateHowToPlay(); break;
             case 'SELECT': this.updateSelect(); break;
+            case 'SHARED_MAP_LOAD_ERROR': this.updateSharedMapLoadError(); break;
+            case 'EXTRA_MAP': this.updateExtraMap(); break;
             case 'WAIT_START': break; // Wait for timer (handled in update top)
             case 'PLAY': this.updatePlay(); break;
             case 'EDITOR':
+                if (this.isEditingExtraMap()) {
+                    this.updateExtraMapEditor();
+                    break;
+                }
                 // Use giveUp (x key or Numpad3) for long-press back to SELECT
                 if (this.input.giveUp) {
                     this.giveUpTimer++;
@@ -224,10 +290,18 @@ export class Game {
 
     onTimerEnd() {
         if (this.state === 'WAIT_MISS') {
+            if (this.isPlayingExtraMap()) {
+                this.endExtraMapPlay();
+                return;
+            }
             if (this.lives > 0) this.state = 'SELECT';
             else this.state = 'GAMEOVER'; // Logical Fallback if lives went to 0 but state was WAIT_MISS
         } else if (this.state === 'WAIT_CLEAR') {
-            if (this.clearedStages.every(Boolean)) this.state = 'ALLCLEAR';
+            if (this.isPlayingExtraMap()) {
+                this.endExtraMapPlay();
+                return;
+            }
+            if (this.currentGameClearedStages.every(Boolean)) this.state = 'ALLCLEAR';
             else this.state = 'SELECT';
         } else if (this.state === 'WAIT_GAMEOVER') {
             this.state = 'TITLE';
@@ -245,20 +319,718 @@ export class Game {
 
         if (this.input.isJustPressed('confirm')) {
             if (this.titleCursor === 0) {
-                this.selectMode = 'PLAY';
+                this.selectCursor = 0;
+                this.selectStageFunctionCursor = 0;
                 this.lives = 3;
-                this.clearedStages = new Array(50).fill(false); // Reset Progress
+                this.currentGameClearedStages = createEmptyStageClearFlags();
                 this.state = 'SELECT';
             } else if (this.titleCursor === 1) {
                 this.howToPlayScroll = 0;
                 this.state = 'HOW_TO_PLAY';
             } else if (this.titleCursor === 2) {
-                this.selectMode = 'EDIT';
-                this.state = 'SELECT';
+                if (!this.canOpenExtraMap()) return;
+                this.state = 'EXTRA_MAP';
             } else if (this.titleCursor === 3) {
+                this.settingsReturnState = 'TITLE';
                 this.state = 'SETTINGS';
             }
         }
+    }
+
+    updateExtraMap() {
+        if (this.extraMapDeleteConfirm) {
+            if (this.input.isJustPressed('confirm')) {
+                this.confirmExtraMapDelete();
+            } else if (this.input.isJustPressed('cancel')) {
+                this.closeExtraMapDeleteConfirm();
+            }
+            return;
+        }
+
+        if (this.extraMapDownloadFullModalOpen) {
+            if (this.input.isJustPressed('confirm') || this.input.isJustPressed('cancel')) {
+                this.closeExtraMapDownloadFullModal();
+            }
+            return;
+        }
+
+        if (this.input.isJustPressed('cancel')) {
+            this.state = 'TITLE';
+            this.selectExitTimer = 0;
+            return;
+        }
+
+        const left = this.input.isJustPressed('left');
+        const right = this.input.isJustPressed('right');
+        const up = this.input.isJustPressed('up');
+        const down = this.input.isJustPressed('down');
+
+        if (right) this.extraMapCursor = (this.extraMapCursor + 1) % 50;
+        if (left) this.extraMapCursor = (this.extraMapCursor + 49) % 50;
+        if (down) this.extraMapCursor = (this.extraMapCursor + 10) % 50;
+        if (up) this.extraMapCursor = (this.extraMapCursor + 40) % 50;
+
+        const items = this.getExtraMapActionItems();
+        if (this.input.isJustPressed('smartRight')) {
+            this.extraMapFunctionCursor = (this.extraMapFunctionCursor + 1) % items.length;
+        }
+        if (this.input.isJustPressed('smartLeft')) {
+            this.extraMapFunctionCursor = (this.extraMapFunctionCursor + items.length - 1) % items.length;
+        }
+
+        if (this.input.isJustPressed('confirm')) {
+            this.executeExtraMapAction(this.extraMapFunctionCursor);
+        }
+    }
+
+    updateSharedMapLoadError() {
+        if (this.input.isJustPressed('confirm') || this.input.isJustPressed('cancel')) {
+            this.state = 'TITLE';
+        }
+    }
+
+    openExtraMapDownloadFullModal() {
+        this.extraMapActionMenu = null;
+        this.extraMapEditorSession = null;
+        this.extraMapPlaySession = null;
+        this.giveUpTimer = 0;
+        this.extraMapDownloadFullModalOpen = true;
+        this.state = 'EXTRA_MAP';
+    }
+
+    closeExtraMapDownloadFullModal() {
+        this.extraMapDownloadFullModalOpen = false;
+    }
+
+    openExtraMapDeleteConfirm(slotIndex) {
+        if (slotIndex < 0 || slotIndex >= this.extraMaps.length) return;
+        if (!this.extraMaps[slotIndex] || this.extraMaps[slotIndex].favorite) return;
+
+        this.extraMapDeleteConfirm = { slotIndex };
+        this.closeExtraMapActionMenu();
+    }
+
+    closeExtraMapDeleteConfirm() {
+        this.extraMapDeleteConfirm = null;
+    }
+
+    confirmExtraMapDelete() {
+        const slotIndex = this.extraMapDeleteConfirm?.slotIndex ?? -1;
+        this.closeExtraMapDeleteConfirm();
+        this.deleteExtraMap(slotIndex);
+    }
+
+    openExtraMapActionMenu(slotIndex) {
+        this.extraMapCursor = slotIndex;
+        this.extraMapFunctionCursor = 0;
+        this.extraMapActionMenu = null;
+        this.selectExitTimer = 0;
+    }
+
+    closeExtraMapActionMenu() {
+        this.extraMapActionMenu = null;
+    }
+
+    showNotice(message, duration = 120) {
+        this.noticeText = message;
+        this.noticeTimer = duration;
+    }
+
+    updateNotice() {
+        if (this.noticeTimer <= 0) return;
+        this.noticeTimer--;
+        if (this.noticeTimer <= 0) {
+            this.noticeText = '';
+            this.noticeTimer = 0;
+        }
+    }
+
+    getExtraMapActionItems(slotIndex = this.extraMapCursor) {
+        const heldMap = this.extraMaps[slotIndex];
+        const hasCopiedStage = this.hasCopiedExtraMapStage();
+        const editUnlocked = this.isExtraMapEditUnlocked();
+
+        return [
+            { id: 'play', label: this.t('extraMap.actions.play'), enabled: !!heldMap },
+            {
+                id: heldMap ? 'edit' : 'create',
+                label: this.t(heldMap ? 'extraMap.actions.edit' : 'extraMap.actions.create'),
+                labelCandidates: [
+                    this.t('extraMap.actions.edit'),
+                    this.t('extraMap.actions.create')
+                ],
+                enabled: editUnlocked,
+                noticeKey: editUnlocked ? null : 'extraMap.notice.editLocked'
+            },
+            { id: 'copy', label: this.t('extraMap.actions.copy'), enabled: !!heldMap },
+            {
+                id: 'paste',
+                label: this.t('extraMap.actions.paste'),
+                enabled: hasCopiedStage,
+                noticeKey: hasCopiedStage ? null : 'extraMap.notice.noCopiedStage'
+            },
+            {
+                id: 'favorite',
+                label: this.t(heldMap?.favorite ? 'extraMap.actions.unfavorite' : 'extraMap.actions.favorite'),
+                labelCandidates: [
+                    this.t('extraMap.actions.favorite'),
+                    this.t('extraMap.actions.unfavorite')
+                ],
+                enabled: !!heldMap
+            },
+            {
+                id: 'share',
+                label: this.t('extraMap.actions.share'),
+                enabled: !!heldMap && heldMap.cleared === true,
+                noticeKey: heldMap && heldMap.cleared !== true ? 'extraMap.notice.shareRequiresClear' : null
+            },
+            {
+                id: 'delete',
+                label: this.t('extraMap.actions.delete'),
+                enabled: !!heldMap && heldMap.favorite !== true,
+                noticeKey: heldMap?.favorite ? 'extraMap.notice.favoriteDeleteProtected' : null
+            }
+        ];
+    }
+
+    executeExtraMapAction(itemIndex = this.extraMapFunctionCursor, slotIndex = this.extraMapCursor) {
+        const items = this.getExtraMapActionItems(slotIndex);
+        const item = items[itemIndex];
+        if (!item) return;
+        this.extraMapFunctionCursor = itemIndex;
+        if (!item.enabled) {
+            if (item.noticeKey) this.showNotice(this.t(item.noticeKey));
+            return;
+        }
+
+        if (item.id === 'play') {
+            this.startExtraMapPlay(slotIndex);
+            return;
+        }
+
+        if (item.id === 'copy') {
+            this.copyExtraMapStage(slotIndex);
+            return;
+        }
+
+        if (item.id === 'paste') {
+            this.pasteExtraMapStage(slotIndex);
+            return;
+        }
+
+        if (item.id === 'share') {
+            this.prepareExtraMapShare(slotIndex);
+            return;
+        }
+
+        if (item.id === 'create') {
+            const result = setHeldMapAtSlot(
+                this.extraMaps,
+                slotIndex,
+                createBlankHeldMap(this.getMaxExtraMapDifficulty())
+            );
+            this.extraMaps = result.maps;
+            if (result.index >= 0) this.extraMapCursor = result.index;
+            this.dataStore.saveExtraMaps({ maps: this.extraMaps });
+            this.startExtraMapEdit(result.index, { removeOnDiscard: true });
+        }
+
+        if (item.id === 'edit') {
+            this.startExtraMapEdit(slotIndex);
+            return;
+        }
+
+        if (item.id === 'favorite') {
+            this.toggleExtraMapFavorite(slotIndex);
+            return;
+        }
+
+        if (item.id === 'delete') {
+            this.openExtraMapDeleteConfirm(slotIndex);
+        }
+    }
+
+    toggleExtraMapFavorite(slotIndex) {
+        const heldMap = this.extraMaps[slotIndex];
+        if (!heldMap) return;
+
+        const result = setHeldMapFavorite(this.extraMaps, slotIndex, !heldMap.favorite);
+        if (!result.changed) return;
+
+        this.extraMaps = result.maps;
+        if (result.index >= 0) this.extraMapCursor = result.index;
+        this.dataStore.saveExtraMaps({ maps: this.extraMaps });
+        this.closeExtraMapActionMenu();
+    }
+
+    deleteExtraMap(slotIndex) {
+        if (slotIndex < 0 || slotIndex >= this.extraMaps.length) return;
+        if (!this.extraMaps[slotIndex] || this.extraMaps[slotIndex].favorite) return;
+
+        const result = clearHeldMapSlot(this.extraMaps, slotIndex);
+        this.extraMaps = result.maps;
+        this.extraMapCursor = slotIndex;
+        this.dataStore.saveExtraMaps({ maps: this.extraMaps });
+        this.closeExtraMapActionMenu();
+    }
+
+    hasCopiedExtraMapStage() {
+        return this.copiedExtraMapStage !== null;
+    }
+
+    copyExtraMapStage(slotIndex) {
+        if (!this.extraMaps[slotIndex]) return;
+
+        this.extraMapCursor = slotIndex;
+        const heldMap = this.extraMaps[slotIndex];
+        this.copiedExtraMapStage = {
+            stage: cloneStageData(heldMap.stage),
+            difficulty: heldMap.difficulty
+        };
+        this.dataStore.saveExtraMaps({ maps: this.extraMaps });
+        this.closeExtraMapActionMenu();
+    }
+
+    pasteExtraMapStage(slotIndex) {
+        if (!this.hasCopiedExtraMapStage()) return;
+
+        const difficulty = Math.min(this.copiedExtraMapStage.difficulty, this.getMaxExtraMapDifficulty());
+        const pastedMap = {
+            stage: cloneStageData(this.copiedExtraMapStage.stage),
+            difficulty,
+            cleared: false,
+            favorite: false
+        };
+
+        if (this.extraMaps[slotIndex]) {
+            const targetMap = {
+                ...this.extraMaps[slotIndex],
+                stage: pastedMap.stage,
+                difficulty,
+                cleared: false
+            };
+            const result = setHeldMapAtSlot(this.extraMaps, slotIndex, targetMap);
+            this.extraMaps = result.maps;
+            this.extraMapCursor = slotIndex;
+        } else {
+            const result = setHeldMapAtSlot(this.extraMaps, slotIndex, pastedMap);
+            this.extraMaps = result.maps;
+            this.extraMapCursor = result.index;
+        }
+
+        this.dataStore.saveExtraMaps({ maps: this.extraMaps });
+        this.closeExtraMapActionMenu();
+    }
+
+    prepareExtraMapShare(slotIndex) {
+        const heldMap = this.extraMaps[slotIndex];
+        if (!heldMap || heldMap.cleared !== true) return;
+
+        this.extraMapCursor = slotIndex;
+        const touchedMap = this.extraMaps[slotIndex];
+        const stage = cloneStageData(touchedMap.stage);
+        const mapData = encodeSharedMap(stage, touchedMap.difficulty);
+        this.pendingExtraMapShare = {
+            mapData,
+            url: this.createExtraMapShareUrl(mapData),
+            stage,
+            difficulty: touchedMap.difficulty
+        };
+        this.pendingExtraMapShare.image = createExtraMapShareImagePayload(this.pendingExtraMapShare);
+        this.dataStore.saveExtraMaps({ maps: this.extraMaps });
+        this.closeExtraMapActionMenu();
+        this.sharePendingExtraMap().catch(error => {
+            console.error(error);
+            this.showNotice(this.t('extraMap.notice.shareFailed'));
+        });
+    }
+
+    async sharePendingExtraMap() {
+        if (!this.pendingExtraMapShare?.image || !globalThis.document?.createElement) {
+            return null;
+        }
+
+        const blob = await createExtraMapShareImageBlob(this.pendingExtraMapShare.image, { assets: this.assets });
+        const text = createExtraMapShareText(
+            this.pendingExtraMapShare.url,
+            this.t('extraMap.shareTextPrompt'),
+            this.pendingExtraMapShare.difficulty,
+            this.t('extraMap.shareDifficultyLabel')
+        );
+        return shareExtraMapImage({
+            blob,
+            text,
+            confirmLabels: {
+                title: this.t('extraMap.shareConfirm.title'),
+                lines: this.tr('extraMap.shareConfirm.lines'),
+                openX: this.t('extraMap.shareConfirm.openX'),
+                close: this.t('extraMap.shareConfirm.close')
+            }
+        });
+    }
+
+    createExtraMapShareUrl(mapData) {
+        const encodedMapData = encodeURIComponent(mapData);
+        const location = globalThis.location;
+        if (!location || !location.origin || !location.pathname) {
+            return `?map=${encodedMapData}`;
+        }
+
+        return `${location.origin}${location.pathname}?map=${encodedMapData}`;
+    }
+
+    processSharedMapQuery({ locationRef = globalThis.location, historyRef = globalThis.history } = {}) {
+        const mapData = getSharedMapQueryValue(locationRef);
+        if (!mapData) return false;
+
+        this.removeSharedMapQueryValue(locationRef, historyRef);
+
+        try {
+            const decodedMap = decodeSharedMap(mapData);
+            this.importSharedMap(decodedMap);
+            return true;
+        } catch (error) {
+            console.error(error);
+            this.extraMapActionMenu = null;
+            this.extraMapEditorSession = null;
+            this.extraMapPlaySession = null;
+            this.giveUpTimer = 0;
+            this.state = 'SHARED_MAP_LOAD_ERROR';
+            return false;
+        }
+    }
+
+    removeSharedMapQueryValue(locationRef = globalThis.location, historyRef = globalThis.history) {
+        if (!locationRef?.origin || !locationRef?.pathname || !historyRef?.replaceState) return;
+
+        const params = new URLSearchParams(locationRef.search || '');
+        params.delete('map');
+        const query = params.toString();
+        const nextUrl = `${locationRef.origin}${locationRef.pathname}${query ? `?${query}` : ''}${locationRef.hash || ''}`;
+        historyRef.replaceState(null, '', nextUrl);
+    }
+
+    importSharedMap({ tiles, difficulty }) {
+        const duplicateIndex = this.extraMaps.findIndex((map) => map && areStagesEqual(map.stage, tiles));
+
+        if (duplicateIndex >= 0) {
+            this.extraMapCursor = duplicateIndex;
+        } else {
+            const emptyIndex = findFirstEmptyHeldMapSlot(this.extraMaps);
+            if (emptyIndex < 0) {
+                this.openExtraMapDownloadFullModal();
+                return;
+            }
+
+            const result = setHeldMapAtSlot(this.extraMaps, emptyIndex, {
+                stage: cloneStageData(tiles),
+                difficulty,
+                cleared: false,
+                favorite: false
+            });
+            this.extraMaps = result.maps;
+            this.extraMapCursor = result.index;
+        }
+
+        this.dataStore.saveExtraMaps({ maps: this.extraMaps });
+        this.startExtraMapPlay(this.extraMapCursor);
+    }
+
+    startExtraMapPlay(slotIndex) {
+        if (!this.extraMaps[slotIndex]) return;
+
+        this.extraMapCursor = slotIndex;
+        const heldMap = this.extraMaps[slotIndex];
+        this.level.data = cloneStageData(heldMap.stage);
+        this.stage = slotIndex;
+        this.extraMapPlaySession = {
+            slotIndex
+        };
+        this.closeExtraMapActionMenu();
+        this.lives = 1;
+        this.resetPlayer();
+        this.giveUpTimer = 0;
+        this.state = 'WAIT_START';
+        this.stateTimer = 1.0;
+    }
+
+    startExtraMapEdit(slotIndex, options = {}) {
+        if (!this.isExtraMapEditUnlocked() || !this.extraMaps[slotIndex]) return;
+
+        this.extraMapCursor = slotIndex;
+        const heldMap = this.extraMaps[slotIndex];
+        const difficulty = Math.min(heldMap.difficulty, this.getMaxExtraMapDifficulty());
+        this.level.data = cloneStageData(heldMap.stage);
+        this.editor = new LevelEditor(this.level);
+        this.extraMapEditorSession = {
+            slotIndex,
+            originalStage: cloneStageData(heldMap.stage),
+            originalDifficulty: heldMap.difficulty,
+            difficulty,
+            controlsOpen: false,
+            controlsScroll: 0,
+            difficultyOpen: false,
+            difficultyCursor: 0,
+            functionCursor: 0,
+            removeOnDiscard: options.removeOnDiscard === true
+        };
+        this.closeExtraMapActionMenu();
+        this.giveUpTimer = 0;
+        this.state = 'EDITOR';
+    }
+
+    updateExtraMapEditor() {
+        if (this.extraMapEditorSession.controlsOpen) {
+            this.updateExtraMapEditorControls();
+            return;
+        }
+
+        if (this.extraMapEditorSession.difficultyOpen) {
+            this.updateExtraMapEditorDifficultyModal();
+            return;
+        }
+
+        if (this.input.giveUp) {
+            this.giveUpTimer++;
+            if (this.giveUpTimer >= this.giveUpMax) {
+                this.discardExtraMapEdit();
+            }
+            return;
+        } else {
+            this.giveUpTimer = 0;
+        }
+
+        this.editor.updateCursor(this.input);
+        this.updateExtraMapEditorDirectPlacement();
+
+        if (this.input.isJustPressed('smartLeft')) this.moveExtraMapEditorFunction(-1);
+        if (this.input.isJustPressed('smartRight')) this.moveExtraMapEditorFunction(1);
+        if (this.input.isJustPressed('confirm')) this.executeExtraMapEditorFunction();
+    }
+
+    updateExtraMapEditorControls() {
+        const speed = 16;
+        if (this.input.isPressed('down')) {
+            this.extraMapEditorSession.controlsScroll += speed;
+        }
+        if (this.input.isPressed('up')) {
+            this.extraMapEditorSession.controlsScroll -= speed;
+        }
+        this.extraMapEditorSession.controlsScroll = Math.max(
+            0,
+            Math.min(this.extraMapEditorSession.controlsScroll, this.getExtraMapEditorControlsScrollMax())
+        );
+        if (this.input.isJustPressed('cancel')) {
+            this.closeExtraMapEditorControls();
+        }
+    }
+
+    updateExtraMapEditorDifficultyModal() {
+        const maxDifficulty = this.getMaxExtraMapDifficulty();
+        if (this.input.isJustPressed('left')) {
+            this.extraMapEditorSession.difficulty = Math.max(
+                1,
+                this.extraMapEditorSession.difficulty - 1
+            );
+        }
+        if (this.input.isJustPressed('right')) {
+            this.extraMapEditorSession.difficulty = Math.min(
+                maxDifficulty,
+                this.extraMapEditorSession.difficulty + 1
+            );
+        }
+        if (this.input.isJustPressed('cancel')) {
+            this.closeExtraMapEditorDifficultyModal();
+        }
+    }
+
+    updateExtraMapEditorDirectPlacement() {
+        for (let i = 0; i <= 7; i++) {
+            if (this.input.keys[`Digit${i}`]) {
+                this.selectExtraMapEditorTile(i);
+                this.editor.placeTile(i);
+            }
+        }
+    }
+
+    getExtraMapEditorFunctions() {
+        return EXTRA_MAP_EDITOR_FUNCTIONS;
+    }
+
+    getEditorTileName(tileId) {
+        return this.t(EDITOR_TILE_NAME_PATHS[tileId] ?? EDITOR_TILE_NAME_PATHS[0]);
+    }
+
+    getExtraMapEditorFunctionBarItems() {
+        return [
+            {
+                id: 'controls',
+                label: this.t('extraMap.actions.help')
+            },
+            {
+                id: 'terrain',
+                label: `${this.editor.selectedTile}: ${this.getEditorTileName(this.editor.selectedTile)}`,
+                labelCandidates: EDITOR_TILE_NAME_PATHS.map((_, tile) => `${tile}: ${this.getEditorTileName(tile)}`)
+            },
+            {
+                id: 'difficulty',
+                label: this.t('extraMap.actions.difficultyShort')
+            },
+            {
+                id: 'save',
+                label: this.t('extraMap.actions.saveShort')
+            }
+        ];
+    }
+
+    getExtraMapEditorFunction() {
+        if (!this.isEditingExtraMap()) return null;
+        return EXTRA_MAP_EDITOR_FUNCTIONS[this.extraMapEditorSession.functionCursor] ?? null;
+    }
+
+    moveExtraMapEditorFunction(delta) {
+        if (!this.isEditingExtraMap()) return;
+        const count = EXTRA_MAP_EDITOR_FUNCTIONS.length;
+        this.extraMapEditorSession.functionCursor = (this.extraMapEditorSession.functionCursor + delta + count) % count;
+        const current = this.getExtraMapEditorFunction();
+        if (current?.id === 'tile') this.editor.selectedTile = current.tile;
+    }
+
+    selectExtraMapEditorTile(tile) {
+        if (!this.isEditingExtraMap()) return;
+        const index = EXTRA_MAP_EDITOR_FUNCTIONS.findIndex(item => item.id === 'tile' && item.tile === tile);
+        if (index >= 0) this.extraMapEditorSession.functionCursor = index;
+        this.editor.selectedTile = tile;
+    }
+
+    selectExtraMapEditorFunctionById(id) {
+        if (!this.isEditingExtraMap()) return;
+        const index = EXTRA_MAP_EDITOR_FUNCTIONS.findIndex(item => item.id === id);
+        if (index >= 0) this.extraMapEditorSession.functionCursor = index;
+    }
+
+    getExtraMapEditorFunctionBarId() {
+        const current = this.getExtraMapEditorFunction();
+        if (!current) return null;
+        return current.id === 'tile' ? 'terrain' : current.id;
+    }
+
+    selectExtraMapEditorFunctionBarItem(id) {
+        if (!this.isEditingExtraMap()) return;
+        if (id === 'terrain') {
+            this.selectExtraMapEditorTile(this.editor.selectedTile);
+            return;
+        }
+        this.selectExtraMapEditorFunctionById(id);
+    }
+
+    tapExtraMapEditorCell(x, y) {
+        if (!this.isEditingExtraMap()) return;
+        if (x < 0 || x >= this.level.cols || y < 0 || y >= this.level.rows) return;
+
+        if (this.editor.cx !== x || this.editor.cy !== y) {
+            this.editor.cx = x;
+            this.editor.cy = y;
+            return;
+        }
+
+        if (this.getExtraMapEditorFunctionBarId() === 'terrain') {
+            this.executeExtraMapEditorFunction();
+        }
+    }
+
+    executeExtraMapEditorFunction(index = this.extraMapEditorSession?.functionCursor ?? 0) {
+        const item = EXTRA_MAP_EDITOR_FUNCTIONS[index];
+        if (!item || !this.isEditingExtraMap()) return;
+        this.extraMapEditorSession.functionCursor = index;
+
+        if (item.id === 'tile') {
+            this.editor.selectedTile = item.tile;
+            this.editor.placeTile(item.tile);
+            return;
+        }
+        if (item.id === 'controls') {
+            this.openExtraMapEditorControls();
+            return;
+        }
+        if (item.id === 'difficulty') {
+            this.openExtraMapEditorDifficultyModal();
+            return;
+        }
+        if (item.id === 'save') {
+            this.saveExtraMapEdit();
+        }
+    }
+
+    openExtraMapEditorControls() {
+        if (!this.isEditingExtraMap()) return;
+        this.extraMapEditorSession.controlsOpen = true;
+        this.extraMapEditorSession.controlsScroll = 0;
+    }
+
+    closeExtraMapEditorControls() {
+        if (!this.isEditingExtraMap()) return;
+        this.extraMapEditorSession.controlsOpen = false;
+    }
+
+    openExtraMapEditorDifficultyModal() {
+        if (!this.isEditingExtraMap()) return;
+        this.extraMapEditorSession.difficultyOpen = true;
+        this.extraMapEditorSession.difficultyCursor = 0;
+    }
+
+    closeExtraMapEditorDifficultyModal() {
+        if (!this.isEditingExtraMap()) return;
+        this.extraMapEditorSession.difficultyOpen = false;
+    }
+
+    getExtraMapEditorControlsScrollMax() {
+        return EXTRA_MAP_EDITOR_CONTROLS_SCROLL_MAX;
+    }
+
+    saveExtraMapEdit() {
+        if (!this.isEditingExtraMap()) return;
+
+        const { slotIndex, originalStage, difficulty } = this.extraMapEditorSession;
+        const heldMap = this.extraMaps[slotIndex];
+        if (!heldMap) {
+            this.discardExtraMapEdit();
+            return;
+        }
+
+        const editedStage = cloneStageData(this.level.data);
+        const stageChanged = !areStagesEqual(originalStage, editedStage);
+        this.extraMaps[slotIndex] = {
+            ...heldMap,
+            stage: editedStage,
+            difficulty,
+            cleared: stageChanged ? false : heldMap.cleared
+        };
+        this.dataStore.saveExtraMaps({ maps: this.extraMaps });
+        this.extraMapEditorSession = null;
+        this.giveUpTimer = 0;
+        this.state = 'EXTRA_MAP';
+    }
+
+    discardExtraMapEdit() {
+        if (!this.isEditingExtraMap()) return;
+
+        const { slotIndex, originalStage, removeOnDiscard } = this.extraMapEditorSession;
+        if (removeOnDiscard) {
+            const result = clearHeldMapSlot(this.extraMaps, slotIndex);
+            this.extraMaps = result.maps;
+            this.extraMapCursor = slotIndex;
+            this.dataStore.saveExtraMaps({ maps: this.extraMaps });
+        } else {
+            this.level.data = cloneStageData(originalStage);
+        }
+        this.extraMapEditorSession = null;
+        this.giveUpTimer = 0;
+        this.state = 'EXTRA_MAP';
+    }
+
+    isEditingExtraMap() {
+        return this.extraMapEditorSession !== null;
     }
 
     updateSettings() {
@@ -294,12 +1066,12 @@ export class Game {
         if (this.settingsCursor === 0) {
             // SPEED
             if (left) {
-                this.targetFPS = Math.max(10, this.targetFPS - 5);
+                this.targetFPS = Math.max(SETTINGS_FPS_MIN, this.targetFPS - 5);
                 this.deltaTime = 1000 / this.targetFPS;
                 this.saveSettings();
             }
             if (right) {
-                this.targetFPS = Math.min(60, this.targetFPS + 5);
+                this.targetFPS = Math.min(SETTINGS_FPS_MAX, this.targetFPS + 5);
                 this.deltaTime = 1000 / this.targetFPS;
                 this.saveSettings();
             }
@@ -342,27 +1114,50 @@ export class Game {
             if (right) this.changeLanguage(1);
         }
 
-        if (this.input.isJustPressed('confirm')) {
-            // BACK
-            if (this.settingsCursor === 6) {
-                document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
-                this.state = 'TITLE';
-            }
-        }
-
-        // Also allow B (giveUp) as quick back
+        // Close settings with the cancel key. Settings changes are applied immediately.
         if (this.input.isJustPressed('cancel')) {
             document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('visible'));
-            this.state = 'TITLE';
+            this.state = this.settingsReturnState;
+        }
+    }
+
+    getSelectStageActionItems() {
+        return [
+            {
+                id: 'play',
+                label: this.t('extraMap.actions.play'),
+                enabled: this.isStageSelectable(this.selectCursor)
+            },
+            {
+                id: 'settings',
+                label: this.t('settings.title'),
+                enabled: true
+            }
+        ];
+    }
+
+    executeSelectStageAction(actionIndex = this.selectStageFunctionCursor) {
+        const item = this.getSelectStageActionItems()[actionIndex];
+        if (!item) return;
+        this.selectStageFunctionCursor = actionIndex;
+        if (!item.enabled) return;
+
+        if (item.id === 'play') {
+            this.loadStage(this.selectCursor);
+            this.state = 'WAIT_START';
+            this.stateTimer = 1.0;
+            return;
+        }
+
+        if (item.id === 'settings') {
+            this.settingsReturnState = 'SELECT';
+            this.settingsCursor = 0;
+            this.state = 'SETTINGS';
         }
     }
 
     updateHowToPlay() {
-        // Exit to Title (Tap/Confirm)
-        if (this.input.isJustPressed('confirm')) {
-            this.state = 'TITLE';
-        }
-        // Also B (giveUp) to back
+        // Exit to Title with the cancel key.
         if (this.input.isJustPressed('cancel')) {
             this.state = 'TITLE';
         }
@@ -377,7 +1172,11 @@ export class Game {
         }
 
         // Max scroll content: Content height varies by language.
-        this.howToPlayScroll = Math.max(0, Math.min(this.howToPlayScroll, 1900));
+        this.howToPlayScroll = Math.max(0, Math.min(this.howToPlayScroll, this.getHowToPlayScrollMax()));
+    }
+
+    getHowToPlayScrollMax() {
+        return HOW_TO_PLAY_SCROLL_MAX;
     }
 
     updateSelect() {
@@ -398,21 +1197,21 @@ export class Game {
         const up = this.input.isJustPressed('up');
         const down = this.input.isJustPressed('down');
 
-        if (right) this.selectCursor = (this.selectCursor + 1) % 50;
-        if (left) this.selectCursor = (this.selectCursor + 49) % 50;
-        if (down) this.selectCursor = (this.selectCursor + 10) % 50;
-        if (up) this.selectCursor = (this.selectCursor + 40) % 50;
+        if (right) this.selectCursor = (this.selectCursor + 1) % NORMAL_STAGE_COUNT;
+        if (left) this.selectCursor = (this.selectCursor + NORMAL_STAGE_COUNT - 1) % NORMAL_STAGE_COUNT;
+        if (down) this.selectCursor = (this.selectCursor + 10) % NORMAL_STAGE_COUNT;
+        if (up) this.selectCursor = (this.selectCursor + NORMAL_STAGE_COUNT - 10) % NORMAL_STAGE_COUNT;
+
+        const items = this.getSelectStageActionItems();
+        if (this.input.isJustPressed('smartRight')) {
+            this.selectStageFunctionCursor = (this.selectStageFunctionCursor + 1) % items.length;
+        }
+        if (this.input.isJustPressed('smartLeft')) {
+            this.selectStageFunctionCursor = (this.selectStageFunctionCursor + items.length - 1) % items.length;
+        }
 
         if (this.input.isJustPressed('confirm')) {
-            if (this.selectMode === 'PLAY') {
-                // Allow playing any stage
-                this.loadStage(this.selectCursor);
-                this.state = 'WAIT_START';
-                this.stateTimer = 1.0; // 1 Second Ready Phase
-            } else {
-                this.loadStage(this.selectCursor);
-                this.state = 'EDITOR';
-            }
+            this.executeSelectStageAction();
         }
     }
 
@@ -497,6 +1296,14 @@ export class Game {
     }
 
     handleGameOver() {
+        if (this.isPlayingExtraMap()) {
+            this.state = 'MISS';
+            this.state = 'WAIT_MISS';
+            this.stateTimer = 1.0;
+            this.running = true;
+            return;
+        }
+
         this.lives--;
         if (this.lives > 0) {
             this.state = 'MISS';
@@ -511,39 +1318,113 @@ export class Game {
     }
 
     handleLevelClear() {
+        if (this.isPlayingExtraMap()) {
+            this.markExtraMapCleared();
+            this.state = 'CLEAR';
+            this.state = 'WAIT_CLEAR';
+            this.stateTimer = 1.0;
+            this.running = true;
+            return;
+        }
+
         this.state = 'CLEAR';
-        this.clearedStages[this.stage] = true;
+        this.currentGameClearedStages[this.stage] = true;
+        this.stageClearHistory[this.stage] = true;
+        this.dataStore.saveStageProgress({ clearedStages: this.stageClearHistory });
         if (this.lives < this.maxLives) this.lives++;
         this.state = 'WAIT_CLEAR';
         this.stateTimer = 1.0;
         this.running = true;
     }
 
+    getSelectableStageCount() {
+        return this.getSelectableStageIndices().length;
+    }
+
+    getSelectableStageIndices() {
+        const unlockedCount = getUnlockedStageCount(this.stageClearHistory);
+        return Array.from({ length: unlockedCount }, (_, index) => index)
+            .filter((stageIndex) => !this.isStageClearedInCurrentGame(stageIndex));
+    }
+
+    getUnlockedStageCount() {
+        return getUnlockedStageCount(this.stageClearHistory);
+    }
+
+    getMaxExtraMapDifficulty() {
+        const clearedStageCount = this.stageClearHistory.filter(Boolean).length;
+        return Math.min(5, Math.max(1, Math.floor(clearedStageCount / 10)));
+    }
+
+    isExtraMapEditUnlocked() {
+        return this.stageClearHistory.filter(Boolean).length >= 10;
+    }
+
+    canOpenExtraMap() {
+        return this.isExtraMapEditUnlocked() || this.extraMaps.some(Boolean);
+    }
+
+    isStageSelectable(stageIndex) {
+        return this.isStageUnlocked(stageIndex) && !this.isStageClearedInCurrentGame(stageIndex);
+    }
+
+    isStageUnlocked(stageIndex) {
+        return isStageUnlocked(stageIndex, this.stageClearHistory);
+    }
+
+    isStageClearedBefore(stageIndex) {
+        return this.stageClearHistory[stageIndex] === true;
+    }
+
+    isStageClearedInCurrentGame(stageIndex) {
+        return this.currentGameClearedStages[stageIndex] === true;
+    }
+
+    getNormalStageDifficulty(stageIndex) {
+        return getNormalStageDifficulty(stageIndex);
+    }
+
+    isPlayingExtraMap() {
+        return this.extraMapPlaySession !== null;
+    }
+
+    markExtraMapCleared() {
+        if (!this.isPlayingExtraMap()) return;
+        const slotIndex = this.extraMapPlaySession.slotIndex;
+        const heldMap = this.extraMaps[slotIndex];
+        if (!heldMap) return;
+
+        this.extraMaps[slotIndex] = {
+            ...heldMap,
+            cleared: true
+        };
+        this.dataStore.saveExtraMaps({ maps: this.extraMaps });
+    }
+
+    endExtraMapPlay() {
+        this.extraMapPlaySession = null;
+        this.giveUpTimer = 0;
+        this.state = 'EXTRA_MAP';
+    }
+
     loadSettings() {
-        try {
-            const data = localStorage.getItem('magic_crystal_settings');
-            if (data) {
-                const s = JSON.parse(data);
-                if (s.padType !== undefined) this.padType = s.padType;
-                if (s.padPosX !== undefined) this.padPosX = s.padPosX;
-                if (s.padPosY !== undefined) this.padPosY = s.padPosY;
-                if (s.padSize !== undefined) this.padSize = Number(s.padSize) || 100;
-                if (s.screenSize !== undefined) {
-                    this.screenSize = Number(s.screenSize) || 100;
-                    this.tempScreenSize = this.screenSize;
-                }
-                if (s.targetFPS !== undefined) {
-                    this.targetFPS = Number(s.targetFPS) || 45;
-                    this.deltaTime = 1000 / this.targetFPS;
-                }
-            }
-        } catch (e) {
-            console.error("Failed to load settings", e);
+        const s = this.dataStore.loadSettings(this.createSettingsSnapshot());
+        if (s.padType !== undefined) this.padType = s.padType;
+        if (s.padPosX !== undefined) this.padPosX = s.padPosX;
+        if (s.padPosY !== undefined) this.padPosY = s.padPosY;
+        if (s.padSize !== undefined) this.padSize = Number(s.padSize) || 100;
+        if (s.screenSize !== undefined) {
+            this.screenSize = Number(s.screenSize) || 100;
+            this.tempScreenSize = this.screenSize;
+        }
+        if (s.targetFPS !== undefined) {
+            this.targetFPS = Number(s.targetFPS) || 45;
+            this.deltaTime = 1000 / this.targetFPS;
         }
     }
 
-    saveSettings() {
-        const s = {
+    createSettingsSnapshot() {
+        return {
             padType: this.padType,
             padPosX: this.padPosX,
             padPosY: this.padPosY,
@@ -551,6 +1432,28 @@ export class Game {
             screenSize: this.screenSize,
             targetFPS: this.targetFPS
         };
-        localStorage.setItem('magic_crystal_settings', JSON.stringify(s));
     }
+
+    saveSettings() {
+        this.dataStore.saveSettings(this.createSettingsSnapshot());
+    }
+}
+
+function cloneStageData(stage) {
+    return stage.map((row) => [...row]);
+}
+
+function areStagesEqual(a, b) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    return a.every((row, y) => (
+        Array.isArray(row) &&
+        Array.isArray(b[y]) &&
+        row.length === b[y].length &&
+        row.every((tile, x) => tile === b[y][x])
+    ));
+}
+
+function getSharedMapQueryValue(locationRef) {
+    if (!locationRef?.search) return null;
+    return new URLSearchParams(locationRef.search).get('map');
 }
