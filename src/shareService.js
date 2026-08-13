@@ -16,6 +16,15 @@ export function createExtraMapShareText(url, prompt = 'Play my custom stage!', d
     ].filter(Boolean).join('\n');
 }
 
+export function createCongratulationsShareText(url, prompt = 'I cleared all 50 stages!') {
+    return [
+        '【MAGIC CRYSTAL】',
+        prompt,
+        url,
+        '#MagicCrystal #GameWorksOAK'
+    ].filter(Boolean).join('\n');
+}
+
 export async function shareExtraMapImage({
     blob,
     text,

@@ -1,7 +1,8 @@
 import { NORMAL_STAGE_COUNT } from './stageUnlock.js';
+import { NORMAL_LEVEL_DIFFICULTIES } from './levels.js';
 import { MAX_SHARED_MAP_DIFFICULTY, MIN_SHARED_MAP_DIFFICULTY } from './sharedMapCodec.js';
 
-export const NORMAL_STAGE_DIFFICULTIES = Array.from({ length: NORMAL_STAGE_COUNT }, () => 1);
+export const NORMAL_STAGE_DIFFICULTIES = NORMAL_LEVEL_DIFFICULTIES;
 
 export function getNormalStageDifficulty(stageIndex) {
     if (!Number.isInteger(stageIndex) || stageIndex < 0 || stageIndex >= NORMAL_STAGE_DIFFICULTIES.length) {

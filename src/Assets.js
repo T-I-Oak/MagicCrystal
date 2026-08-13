@@ -27,7 +27,8 @@ export class Assets {
                 this.loadImage('assets/player.png?v=' + ts).then(img => this.splitPlayer(img)),
                 this.loadImage('assets/tiles.png?v=' + ts).then(img => this.splitTiles(img)),
                 this.loadImage('assets/title.png?v=' + ts).then(img => this.title = img),
-                this.loadImage('assets/logo.png?v=' + ts).then(img => this.logo = img)
+                this.loadImage('assets/logo.png?v=' + ts).then(img => this.logo = img),
+                this.loadImage('assets/clear.png?v=' + ts).then(img => this.clear = img)
             ];
 
             // Execute all loading tasks

@@ -80,13 +80,6 @@ describe('Game Class', () => {
         expect(game.isStageSelectable(10)).toBe(false);
     });
 
-    it('returns level 1 difficulty for normal stages', () => {
-        const game = new Game(mockCanvas, mockAssets);
-
-        expect(game.getNormalStageDifficulty(0)).toBe(1);
-        expect(game.getNormalStageDifficulty(49)).toBe(1);
-    });
-
     it('unlocks the next stage block after clearing the current block', () => {
         const game = new Game(mockCanvas, mockAssets);
 
@@ -177,6 +170,41 @@ describe('Game Class', () => {
         expect(game.state).toBe('SELECT');
         expect(game.selectCursor).toBe(0);
         expect(game.isStageSelectable(game.selectCursor)).toBe(false);
+    });
+
+    it('opens the congratulations screen after clearing all stages in one normal game', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.currentGameClearedStages.fill(true);
+        game.currentGameClearedStages[49] = false;
+        game.stage = 49;
+
+        game.handleLevelClear();
+        for (let i = 0; i < 60; i++) {
+            game.update();
+        }
+
+        expect(game.state).toBe('CONGRATULATIONS');
+        expect(game.congratulationsCursor).toBe(0);
+    });
+
+    it('returns from congratulations to title with the cancel action', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'CONGRATULATIONS';
+        game.input.actions.cancel = true;
+
+        game.update();
+
+        expect(game.state).toBe('TITLE');
+    });
+
+    it('selects title from congratulations actions', () => {
+        const game = new Game(mockCanvas, mockAssets);
+        game.state = 'CONGRATULATIONS';
+
+        game.executeCongratulationsAction(1);
+
+        expect(game.state).toBe('TITLE');
+        expect(game.congratulationsCursor).toBe(1);
     });
 
     it('keeps the unavailable extra map title item on the title screen', () => {

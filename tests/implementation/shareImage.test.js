@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     createExtraMapShareImageBlob,
     createExtraMapShareImagePayload,
+    createCongratulationsShareImagePayload,
+    paintCongratulationsShareImage,
     paintExtraMapShareImage,
+    CONGRATULATIONS_SHARE_IMAGE_HEIGHT,
+    CONGRATULATIONS_SHARE_IMAGE_WIDTH,
     SHARE_IMAGE_HEIGHT,
     SHARE_IMAGE_TITLE,
     SHARE_IMAGE_WIDTH
@@ -26,6 +30,8 @@ function createMockContext() {
         createLinearGradient: vi.fn(() => ({
             addColorStop: vi.fn()
         })),
+        save: vi.fn(),
+        restore: vi.fn(),
         fillRect: vi.fn(),
         strokeRect: vi.fn(),
         fillText: vi.fn((text, x, y) => calls.push({ text, x, y })),
@@ -139,5 +145,57 @@ describe('extra map share image', () => {
         expect(canvas.width).toBe(SHARE_IMAGE_WIDTH);
         expect(canvas.height).toBe(SHARE_IMAGE_HEIGHT);
         expect(canvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png');
+    });
+});
+
+describe('congratulations share image', () => {
+    it('creates a payload with display date and copyright metadata', () => {
+        const payload = createCongratulationsShareImagePayload({
+            date: new Date(Date.UTC(2026, 7, 13))
+        });
+
+        expect(payload).toEqual({
+            title: SHARE_IMAGE_TITLE,
+            dateText: 'Aug. 13, 2026',
+            copyrightText: '© T.I.OAK 2026 | GameWorks OAK'
+        });
+    });
+
+    it('paints the clear image, date, and copyright', () => {
+        const calls = [];
+        const context = createMockContext();
+        context.canvas = {
+            width: CONGRATULATIONS_SHARE_IMAGE_WIDTH,
+            height: CONGRATULATIONS_SHARE_IMAGE_HEIGHT
+        };
+        context.strokeText = vi.fn((text, x, y) => calls.push({ type: 'stroke', text, x, y }));
+        context.fillText = vi.fn((text, x, y) => calls.push({ type: 'fill', text, x, y }));
+        const clear = { width: 1200, height: 846 };
+        const payload = createCongratulationsShareImagePayload({
+            date: new Date(Date.UTC(2026, 7, 13))
+        });
+
+        paintCongratulationsShareImage(context, payload, { clear });
+
+        expect(context.drawImage).toHaveBeenCalledWith(clear, 0, 0, 1200, 846);
+        expect(calls).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'stroke', text: 'Aug. 13, 2026' }),
+            expect.objectContaining({ type: 'fill', text: 'Aug. 13, 2026' }),
+            expect.objectContaining({ type: 'fill', text: payload.copyrightText })
+        ]));
+        expect(calls.find(call => call.text === payload.copyrightText).y).toBeGreaterThan(860);
+    });
+
+    it('requires the clear image', () => {
+        const context = createMockContext();
+        context.canvas = {
+            width: CONGRATULATIONS_SHARE_IMAGE_WIDTH,
+            height: CONGRATULATIONS_SHARE_IMAGE_HEIGHT
+        };
+
+        expect(() => paintCongratulationsShareImage(
+            context,
+            createCongratulationsShareImagePayload({ date: new Date(Date.UTC(2026, 7, 13)) })
+        )).toThrow('clear image is required');
     });
 });

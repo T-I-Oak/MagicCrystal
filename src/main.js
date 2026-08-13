@@ -11,6 +11,7 @@ import {
 } from './editorLayout.js';
 import {
     createBackButtonLayout,
+    createCongratulationsLayout,
     createExtraMapDeleteConfirmLayout,
     createExtraMapFunctionBarLayout,
     createSelectStageFunctionBarLayout,
@@ -464,6 +465,14 @@ window.onload = async () => {
                 createRectAction({ x: 0, y: 0, width: canvas.width, height: canvas.height }, () => {
                     pressVirtualKey('x');
                 })
+            ];
+        }
+
+        if (game.state === 'CONGRATULATIONS' || game.state === 'ALLCLEAR') {
+            const layout = createCongratulationsLayout(canvas.width, canvas.height);
+            return [
+                createRectAction(layout.shareButton, () => game.executeCongratulationsAction(0)),
+                createRectAction(layout.titleButton, () => game.executeCongratulationsAction(1))
             ];
         }
 

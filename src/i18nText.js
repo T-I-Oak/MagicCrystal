@@ -77,6 +77,68 @@ const TEXT = {
             }
         }
     },
+    congratulations: {
+        actions: {
+            share: {
+                'lang-store': {
+                    ja: 'SHARE',
+                    en: 'SHARE'
+                }
+            },
+            title: {
+                'lang-store': {
+                    ja: 'TITLE',
+                    en: 'TITLE'
+                }
+            }
+        },
+        notice: {
+            shareFailed: {
+                'lang-store': {
+                    ja: '共有を実行できませんでした',
+                    en: 'Sharing could not be started'
+                }
+            }
+        },
+        shareTextPrompt: {
+            'lang-store': {
+                ja: 'Magic Crystal の全50ステージをクリアーしました！',
+                en: 'I cleared all 50 stages in Magic Crystal!'
+            }
+        },
+        shareConfirm: {
+            title: {
+                'lang-store': {
+                    ja: 'CLEAR SHARE',
+                    en: 'CLEAR SHARE'
+                }
+            },
+            lines: {
+                'lang-store': {
+                    ja: [
+                        'クリアー画像をクリップボードにコピーしました。',
+                        'X を開いて貼り付けますか？'
+                    ],
+                    en: [
+                        'The clear image has been copied to the clipboard.',
+                        'Open X and paste it?'
+                    ]
+                }
+            },
+            openX: {
+                'lang-store': {
+                    ja: 'OPEN X',
+                    en: 'OPEN X'
+                }
+            },
+            close: {
+                'lang-store': {
+                    ja: 'CLOSE',
+                    en: 'CLOSE'
+                }
+            }
+        }
+    },
     extraMap: {
         title: {
             'lang-store': {

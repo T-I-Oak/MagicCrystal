@@ -11,6 +11,7 @@ import {
     createBackButtonLayout,
     createExtraMapDeleteConfirmLayout,
     createExtraMapFunctionBarLayout,
+    createCongratulationsLayout,
     createSelectStageFunctionBarLayout,
     createSelectStageGridLayout,
     createTitleMenuLayout
@@ -53,6 +54,10 @@ export class Renderer {
         }
         if (state === 'SHARED_MAP_LOAD_ERROR') {
             this.drawSharedMapLoadError(game);
+            return;
+        }
+        if (state === 'CONGRATULATIONS' || state === 'ALLCLEAR') {
+            this.drawCongratulations(game);
             return;
         }
         if (state === 'EXTRA_MAP') {
@@ -678,6 +683,75 @@ export class Renderer {
                 label: game.t('extraMap.loadError.close')
             }]
         });
+    }
+
+    drawCongratulations(game) {
+        const layout = createCongratulationsLayout(this.ctx.canvas.width, this.ctx.canvas.height);
+        this.ctx.save();
+        this.ctx.fillStyle = '#05050a';
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+
+        if (this.assets.clear) {
+            const scale = Math.min(
+                layout.image.width / this.assets.clear.width,
+                layout.image.height / this.assets.clear.height
+            );
+            const width = this.assets.clear.width * scale;
+            const height = this.assets.clear.height * scale;
+            const x = layout.image.x + (layout.image.width - width) / 2;
+            const y = layout.image.y + (layout.image.height - height) / 2;
+            this.ctx.drawImage(this.assets.clear, x, y, width, height);
+        } else {
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 46px monospace';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('CONGRATULATIONS', this.ctx.canvas.width / 2, 220);
+        }
+
+        this.drawCongratulationsConfetti(game);
+        this.drawCongratulationsButtons(game, layout);
+        this.drawNotice(game);
+        this.ctx.restore();
+    }
+
+    drawCongratulationsButtons(game, layout) {
+        this.drawSelectableSoftPadCommandButton(
+            layout.shareButton,
+            'A',
+            game.t('congratulations.actions.share'),
+            game.congratulationsCursor === 0,
+            22
+        );
+        this.drawSelectableSoftPadCommandButton(
+            layout.titleButton,
+            'B',
+            game.t('congratulations.actions.title'),
+            game.congratulationsCursor === 1,
+            22
+        );
+    }
+
+    drawCongratulationsConfetti(game) {
+        const elapsed = Math.max(0, (Date.now() - game.lastStateChange) / 1000);
+        const colors = ['#ff3b2f', '#1f9bff', '#ffd24d', '#ffffff'];
+        this.ctx.save();
+        for (let i = 0; i < 72; i++) {
+            const seed = Math.sin(i * 92.17) * 10000;
+            const base = seed - Math.floor(seed);
+            const x = (base * this.ctx.canvas.width + Math.sin(elapsed * 1.5 + i) * 28) % this.ctx.canvas.width;
+            const speed = 45 + (i % 7) * 10;
+            const y = ((elapsed * speed + i * 37) % (this.ctx.canvas.height + 80)) - 80;
+            const w = 5 + (i % 3) * 3;
+            const h = 12 + (i % 4) * 2;
+            this.ctx.save();
+            this.ctx.translate(x, y);
+            this.ctx.rotate(elapsed * (0.8 + (i % 5) * 0.2) + i);
+            this.ctx.fillStyle = colors[i % colors.length];
+            this.ctx.globalAlpha = 0.78;
+            this.ctx.fillRect(-w / 2, -h / 2, w, h);
+            this.ctx.restore();
+        }
+        this.ctx.restore();
     }
 
     drawExtraMapDownloadFullModal(game) {

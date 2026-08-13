@@ -17,8 +17,13 @@ import {
     setHeldMapAtSlot
 } from './extraMapData.js';
 import { decodeSharedMap, encodeSharedMap } from './sharedMapCodec.js';
-import { createExtraMapShareImageBlob, createExtraMapShareImagePayload } from './shareImage.js';
-import { createExtraMapShareText, shareExtraMapImage } from './shareService.js';
+import {
+    createCongratulationsShareImageBlob,
+    createCongratulationsShareImagePayload,
+    createExtraMapShareImageBlob,
+    createExtraMapShareImagePayload
+} from './shareImage.js';
+import { createCongratulationsShareText, createExtraMapShareText, shareExtraMapImage } from './shareService.js';
 
 const SETTINGS_ITEM_COUNT = 6;
 const EXTRA_MAP_EDITOR_FUNCTIONS = [
@@ -97,6 +102,7 @@ export class Game {
         this.selectStageFunctionCursor = 0;
         this.extraMapCursor = 0;
         this.extraMapFunctionCursor = 0;
+        this.congratulationsCursor = 0;
         this.extraMapActionMenu = null;
         this.extraMapEditorSession = null;
         this.extraMapPlaySession = null;
@@ -284,7 +290,10 @@ export class Game {
                 }
                 break;
             case 'GAMEOVER': if (this.input.isJustPressed('confirm')) this.state = 'TITLE'; break;
-            case 'ALLCLEAR': if (this.input.isJustPressed('confirm')) this.state = 'TITLE'; break;
+            case 'ALLCLEAR':
+            case 'CONGRATULATIONS':
+                this.updateCongratulations();
+                break;
         }
     }
 
@@ -301,7 +310,7 @@ export class Game {
                 this.endExtraMapPlay();
                 return;
             }
-            if (this.currentGameClearedStages.every(Boolean)) this.state = 'ALLCLEAR';
+            if (this.shouldOpenCongratulations()) this.openCongratulations();
             else this.state = 'SELECT';
         } else if (this.state === 'WAIT_GAMEOVER') {
             this.state = 'TITLE';
@@ -667,6 +676,83 @@ export class Game {
                 close: this.t('extraMap.shareConfirm.close')
             }
         });
+    }
+
+    openCongratulations() {
+        this.congratulationsCursor = 0;
+        this.state = 'CONGRATULATIONS';
+    }
+
+    shouldOpenCongratulations() {
+        return this.currentGameClearedStages.every(Boolean);
+    }
+
+    getCongratulationsActionItems() {
+        return [
+            { id: 'share', label: this.t('congratulations.actions.share'), enabled: true },
+            { id: 'title', label: this.t('congratulations.actions.title'), enabled: true }
+        ];
+    }
+
+    updateCongratulations() {
+        const items = this.getCongratulationsActionItems();
+        if (this.input.isJustPressed('left') || this.input.isJustPressed('smartLeft')) {
+            this.congratulationsCursor = (this.congratulationsCursor + items.length - 1) % items.length;
+        }
+        if (this.input.isJustPressed('right') || this.input.isJustPressed('smartRight')) {
+            this.congratulationsCursor = (this.congratulationsCursor + 1) % items.length;
+        }
+        if (this.input.isJustPressed('cancel')) {
+            this.state = 'TITLE';
+            return;
+        }
+        if (this.input.isJustPressed('confirm')) {
+            this.executeCongratulationsAction(this.congratulationsCursor);
+        }
+    }
+
+    executeCongratulationsAction(actionIndex = this.congratulationsCursor) {
+        const item = this.getCongratulationsActionItems()[actionIndex];
+        if (!item) return;
+        this.congratulationsCursor = actionIndex;
+        if (item.id === 'title') {
+            this.state = 'TITLE';
+            return;
+        }
+        if (item.id === 'share') {
+            this.shareCongratulations().catch(error => {
+                console.error(error);
+                this.showNotice(this.t('congratulations.notice.shareFailed'));
+            });
+        }
+    }
+
+    async shareCongratulations() {
+        if (!globalThis.document?.createElement) return null;
+        const image = createCongratulationsShareImagePayload();
+        const blob = await createCongratulationsShareImageBlob(image, { assets: this.assets });
+        const text = createCongratulationsShareText(
+            this.createGameShareUrl(),
+            this.t('congratulations.shareTextPrompt')
+        );
+        return shareExtraMapImage({
+            blob,
+            text,
+            confirmLabels: {
+                title: this.t('congratulations.shareConfirm.title'),
+                lines: this.tr('congratulations.shareConfirm.lines'),
+                openX: this.t('congratulations.shareConfirm.openX'),
+                close: this.t('congratulations.shareConfirm.close')
+            }
+        });
+    }
+
+    createGameShareUrl() {
+        const location = globalThis.location;
+        if (!location || !location.origin || !location.pathname) {
+            return '';
+        }
+        return `${location.origin}${location.pathname}`;
     }
 
     createExtraMapShareUrl(mapData) {

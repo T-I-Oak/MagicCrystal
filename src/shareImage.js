@@ -3,6 +3,8 @@ import { formatCopyrightText } from './constants.js';
 export const SHARE_IMAGE_WIDTH = 1200;
 export const SHARE_IMAGE_HEIGHT = 720;
 export const SHARE_IMAGE_TITLE = 'Magic Crystal';
+export const CONGRATULATIONS_SHARE_IMAGE_WIDTH = 1200;
+export const CONGRATULATIONS_SHARE_IMAGE_HEIGHT = 910;
 const PORTAL_TILE = 3;
 
 const TILE_COLORS = [
@@ -22,6 +24,14 @@ export function createExtraMapShareImagePayload({ stage, difficulty, url }) {
         difficulty,
         url,
         stage,
+        copyrightText: formatCopyrightText()
+    };
+}
+
+export function createCongratulationsShareImagePayload({ date = new Date() } = {}) {
+    return {
+        title: SHARE_IMAGE_TITLE,
+        dateText: formatShareDate(date),
         copyrightText: formatCopyrightText()
     };
 }
@@ -70,14 +80,51 @@ export async function createExtraMapShareImageBlob(payload, { documentRef = glob
     return canvasToPngBlob(canvas);
 }
 
-function createShareCanvas(documentRef) {
+export function paintCongratulationsShareImage(ctx, payload, assets = null) {
+    validateCongratulationsShareImagePayload(payload);
+    if (!assets?.clear?.width || !assets?.clear?.height) {
+        throw new Error('[CongratulationsShareImage] clear image is required.');
+    }
+
+    const { width, height } = ctx.canvas;
+    const footerHeight = 64;
+
+    ctx.fillStyle = '#05050a';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(assets.clear, 0, 0, width, height - footerHeight);
+
+    drawOutlinedCenteredText(ctx, payload.dateText, width / 2, height - footerHeight - 54, {
+        font: 'bold 72px serif',
+        fillStyle: '#fff4c8',
+        strokeStyle: 'rgba(0, 0, 0, 0.86)',
+        lineWidth: 7,
+        shadowColor: 'rgba(255, 205, 80, 0.55)',
+        shadowBlur: 14
+    });
+
+    ctx.fillStyle = '#05050a';
+    ctx.fillRect(0, height - footerHeight, width, footerHeight);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.62)';
+    ctx.font = '22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(payload.copyrightText, width / 2, height - footerHeight / 2 + 1);
+}
+
+export async function createCongratulationsShareImageBlob(payload, { documentRef = globalThis.document, assets = null } = {}) {
+    const canvas = createShareCanvas(documentRef, CONGRATULATIONS_SHARE_IMAGE_WIDTH, CONGRATULATIONS_SHARE_IMAGE_HEIGHT);
+    paintCongratulationsShareImage(canvas.getContext('2d'), payload, assets);
+    return canvasToPngBlob(canvas);
+}
+
+function createShareCanvas(documentRef, width = SHARE_IMAGE_WIDTH, height = SHARE_IMAGE_HEIGHT) {
     if (!documentRef?.createElement) {
         throw new Error('[ExtraMapShareImage] document is required.');
     }
 
     const canvas = documentRef.createElement('canvas');
-    canvas.width = SHARE_IMAGE_WIDTH;
-    canvas.height = SHARE_IMAGE_HEIGHT;
+    canvas.width = width;
+    canvas.height = height;
     return canvas;
 }
 
@@ -159,4 +206,32 @@ function validateShareImagePayload(payload) {
         throw new Error('[ExtraMapShareImage] difficulty must be 1..5.');
     }
     findPortal(payload.stage);
+}
+
+function validateCongratulationsShareImagePayload(payload) {
+    if (!payload) throw new Error('[CongratulationsShareImage] payload is required.');
+    if (!payload.dateText) throw new Error('[CongratulationsShareImage] date text is required.');
+    if (!payload.copyrightText) throw new Error('[CongratulationsShareImage] copyright text is required.');
+}
+
+function formatShareDate(date) {
+    const value = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(value.getTime())) throw new Error('[CongratulationsShareImage] date is invalid.');
+    const month = value.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+    return `${month}. ${value.getUTCDate()}, ${value.getUTCFullYear()}`;
+}
+
+function drawOutlinedCenteredText(ctx, text, x, y, options) {
+    ctx.save();
+    ctx.font = options.font;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.shadowColor = options.shadowColor;
+    ctx.shadowBlur = options.shadowBlur;
+    ctx.lineWidth = options.lineWidth;
+    ctx.strokeStyle = options.strokeStyle;
+    ctx.fillStyle = options.fillStyle;
+    ctx.strokeText(text, x, y);
+    ctx.fillText(text, x, y);
+    ctx.restore();
 }

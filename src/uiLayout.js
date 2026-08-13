@@ -293,3 +293,34 @@ export function createExtraMapDeleteConfirmLayout(canvasWidth = 960, canvasHeigh
         }
     };
 }
+
+export function createCongratulationsLayout(canvasWidth = 960, canvasHeight = 660) {
+    const imageMaxWidth = 900;
+    const imageMaxHeight = canvasHeight - 118;
+    const buttonWidth = 220;
+    const buttonHeight = 48;
+    const gap = 28;
+    const buttonY = canvasHeight - 68;
+    const centerX = canvasWidth / 2;
+
+    return {
+        image: {
+            x: Math.round((canvasWidth - imageMaxWidth) / 2),
+            y: 18,
+            width: imageMaxWidth,
+            height: imageMaxHeight
+        },
+        shareButton: {
+            x: Math.round(centerX - buttonWidth - gap / 2),
+            y: buttonY,
+            width: buttonWidth,
+            height: buttonHeight
+        },
+        titleButton: {
+            x: Math.round(centerX + gap / 2),
+            y: buttonY,
+            width: buttonWidth,
+            height: buttonHeight
+        }
+    };
+}

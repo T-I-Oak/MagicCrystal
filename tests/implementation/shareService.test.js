@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+    createCongratulationsShareText,
     createExtraMapShareText,
     EXTRA_MAP_SHARE_FILE_NAME,
     shareExtraMapImage
@@ -22,6 +23,15 @@ describe('extra map share service', () => {
             'Difficulty'
         )).toBe(
             '【MAGIC CRYSTAL】\nPlay my custom stage!\nDifficulty: ★★\nhttps://example.test/MagicCrystal/?map=test\n#MagicCrystal #GameWorksOAK'
+        );
+    });
+
+    it('creates congratulations share text with the game url', () => {
+        expect(createCongratulationsShareText(
+            'https://example.test/MagicCrystal/',
+            'Magic Crystal の全50ステージをクリアーしました！'
+        )).toBe(
+            '【MAGIC CRYSTAL】\nMagic Crystal の全50ステージをクリアーしました！\nhttps://example.test/MagicCrystal/\n#MagicCrystal #GameWorksOAK'
         );
     });
 
