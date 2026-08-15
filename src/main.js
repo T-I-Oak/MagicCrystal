@@ -56,18 +56,22 @@ window.onload = async () => {
             scale *= (game.screenSize / 100);
         }
 
-        const gameWidth = bw * scale;
+        const gameWidth = 960 * scale;
+        const gameHeight = 660 * scale;
+        const containerWidth = bw * scale;
 
         // OFFSET COMPENSATION: 
         // 1. Calculate ideal physical center: (vw - gameWidth) / 2
         // 2. Subtract parent's relative offset (viewport.left) to pinpoint absolute 0 on screen
-        const logicalCenter = (vw - gameWidth) / 2;
+        const logicalCenter = (vw - containerWidth) / 2;
         const parentLeft = viewport.getBoundingClientRect().left;
         const finalLeft = logicalCenter - parentLeft;
 
         container.style.left = `${finalLeft}px`;
-        container.style.transform = `scale(${scale})`;
-
+        container.style.width = `${gameWidth}px`;
+        container.style.height = `${gameHeight}px`;
+        canvas.style.width = `${gameWidth}px`;
+        canvas.style.height = `${gameHeight}px`;
     };
 
     window.addEventListener('resize', scaleGame);
@@ -630,14 +634,22 @@ window.onload = async () => {
 
     canvas.addEventListener('touchstart', (e) => {
         if (!e.touches || e.touches.length === 0) return;
+        e.preventDefault();
         handleMenuPointerDown(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
+    }, { passive: false });
     canvas.addEventListener('touchmove', (e) => {
         if (!e.touches || e.touches.length === 0) return;
+        e.preventDefault();
         handleMenuPointerMove(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-    canvas.addEventListener('touchend', handleMenuPointerUp);
-    canvas.addEventListener('touchcancel', handleMenuPointerUp);
+    }, { passive: false });
+    canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleMenuPointerUp();
+    }, { passive: false });
+    canvas.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        handleMenuPointerUp();
+    }, { passive: false });
 
     game.start();
 };
