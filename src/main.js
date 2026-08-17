@@ -40,8 +40,9 @@ window.onload = async () => {
         const container = document.getElementById('game-container');
         if (!layer || !container) return;
 
-        const vw = layer.clientWidth;
-        const vh = layer.clientHeight;
+        const layerRect = layer.getBoundingClientRect();
+        const vw = layerRect.width;
+        const vh = layerRect.height;
         if (vw <= 0 || vh <= 0) return;
 
         const borderWidth = 8;
@@ -57,15 +58,15 @@ window.onload = async () => {
         }
         scale = Math.max(0.1, scale);
 
-        const gameWidth = 960 * scale;
-        const gameHeight = 660 * scale;
+        const gameWidth = Math.floor(960 * scale);
+        const gameHeight = Math.floor(660 * scale);
         const containerWidth = gameWidth + borderWidth;
         const containerHeight = gameHeight + borderWidth;
 
-        container.style.left = `${(vw - containerWidth) / 2}px`;
-        container.style.top = `${(vh - containerHeight) / 2}px`;
-        container.style.width = `${gameWidth}px`;
-        container.style.height = `${gameHeight}px`;
+        container.style.left = `${Math.max(0, (vw - containerWidth) / 2)}px`;
+        container.style.top = '0px';
+        container.style.width = `${containerWidth}px`;
+        container.style.height = `${containerHeight}px`;
         canvas.style.width = `${gameWidth}px`;
         canvas.style.height = `${gameHeight}px`;
     };
