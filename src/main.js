@@ -36,38 +36,34 @@ window.onload = async () => {
 
     // Basic Scaling Logic
     const scaleGame = () => {
-        const viewport = document.getElementById('viewport');
         const layer = document.getElementById('game-layer');
         const container = document.getElementById('game-container');
-        if (!viewport || !container) return;
+        if (!layer || !container) return;
 
-        // Use VisualViewport for accurate visible area on Safari
-        const vv = window.visualViewport;
-        const vw = vv ? vv.width : window.innerWidth;
-        const vh = vv ? vv.height : window.innerHeight;
+        const vw = layer.clientWidth;
+        const vh = layer.clientHeight;
+        if (vw <= 0 || vh <= 0) return;
 
-        // Base resolution including border (4px * 2) + 2px safety margin
-        const bw = 970;
-        const bh = 670; // Updated from 650 for 660px canvas
+        const borderWidth = 8;
+        const fitMargin = 2;
 
         // Scale to fit while maintaining aspect ratio
-        let scale = Math.min(vw / bw, vh / bh);
+        let scale = Math.min(
+            (vw - borderWidth - fitMargin) / 960,
+            (vh - borderWidth - fitMargin) / 660
+        );
         if (game && game.screenSize) {
             scale *= (game.screenSize / 100);
         }
+        scale = Math.max(0.1, scale);
 
         const gameWidth = 960 * scale;
         const gameHeight = 660 * scale;
-        const containerWidth = bw * scale;
+        const containerWidth = gameWidth + borderWidth;
+        const containerHeight = gameHeight + borderWidth;
 
-        // OFFSET COMPENSATION: 
-        // 1. Calculate ideal physical center: (vw - gameWidth) / 2
-        // 2. Subtract parent's relative offset (viewport.left) to pinpoint absolute 0 on screen
-        const logicalCenter = (vw - containerWidth) / 2;
-        const parentLeft = viewport.getBoundingClientRect().left;
-        const finalLeft = logicalCenter - parentLeft;
-
-        container.style.left = `${finalLeft}px`;
+        container.style.left = `${(vw - containerWidth) / 2}px`;
+        container.style.top = `${(vh - containerHeight) / 2}px`;
         container.style.width = `${gameWidth}px`;
         container.style.height = `${gameHeight}px`;
         canvas.style.width = `${gameWidth}px`;
@@ -99,8 +95,9 @@ window.onload = async () => {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        const viewport = document.getElementById('viewport');
-        const rect = viewport.getBoundingClientRect();
+        const controls = document.getElementById('touch-controls');
+        if (!controls) return;
+        const rect = controls.getBoundingClientRect();
 
         // Convert to Percentage (0-100)
         let px = ((clientX - rect.left) / rect.width) * 100;
