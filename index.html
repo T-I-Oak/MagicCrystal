@@ -4,15 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Magic Crystal</title>
     <style>
         html,
         body {
-            --safe-area-inset-top: env(safe-area-inset-top);
-            --safe-area-inset-right: env(safe-area-inset-right);
-            --safe-area-inset-bottom: env(safe-area-inset-bottom);
-            --safe-area-inset-left: env(safe-area-inset-left);
             width: 100vw;
             height: 100vh;
             height: 100dvh;
@@ -47,13 +43,11 @@
         }
 
         #game-layer {
-            position: absolute;
-            top: var(--safe-area-inset-top);
-            right: var(--safe-area-inset-right);
-            bottom: var(--safe-area-inset-bottom);
-            left: var(--safe-area-inset-left);
+            position: relative;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            /* Safe-area-bounded container for the scaled game canvas. */
+            /* Container for the scaled game canvas. */
         }
 
         #game-container {
@@ -65,7 +59,7 @@
             background-color: #000;
             border: 4px solid #4e4e6a;
             border-radius: 8px;
-            box-sizing: content-box;
+            box-sizing: border-box;
         }
 
         canvas {
@@ -83,10 +77,10 @@
         /* Touch Controls Overlay */
         #touch-controls {
             position: absolute;
-            top: var(--safe-area-inset-top);
-            right: var(--safe-area-inset-right);
-            bottom: var(--safe-area-inset-bottom);
-            left: var(--safe-area-inset-left);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
             /* Let touches pass through to game/canvas if not on buttons */
             z-index: 100;
@@ -286,7 +280,7 @@
             line-height: 1;
         }
     </style>
-  <script type="module" crossorigin src="/MagicCrystal/assets/index-BXgKYCbB.js"></script>
+  <script type="module" crossorigin src="/MagicCrystal/assets/index-9EitbbSD.js"></script>
 </head>
 
 <body>
