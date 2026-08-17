@@ -36,9 +36,23 @@ window.onload = async () => {
 
     // Basic Scaling Logic
     const scaleGame = () => {
+        const viewport = document.getElementById('viewport');
         const layer = document.getElementById('game-layer');
         const container = document.getElementById('game-container');
-        if (!layer || !container) return;
+        if (!viewport || !layer || !container) return;
+
+        const visualViewport = window.visualViewport;
+        if (visualViewport) {
+            viewport.style.left = `${visualViewport.offsetLeft}px`;
+            viewport.style.top = `${visualViewport.offsetTop}px`;
+            viewport.style.width = `${visualViewport.width}px`;
+            viewport.style.height = `${visualViewport.height}px`;
+        } else {
+            viewport.style.left = '0px';
+            viewport.style.top = '0px';
+            viewport.style.width = '100vw';
+            viewport.style.height = '100dvh';
+        }
 
         const layerRect = layer.getBoundingClientRect();
         const vw = layerRect.width;
