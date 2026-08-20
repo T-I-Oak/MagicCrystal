@@ -82,7 +82,6 @@ export class Renderer {
         this.ctx.stroke();
 
         this.ctx.save();
-        this.ctx.save();
         this.ctx.translate(this.shakeX, this.shakeY + 80); // Offset for Header (80px)
 
         // Draw Level
