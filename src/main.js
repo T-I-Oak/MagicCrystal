@@ -178,12 +178,16 @@ window.onload = async () => {
     let lastY = 0;
     let isMoving = false;
     let isPointerDownForMenu = false;
+    let touchStartClientX = 0;
+    let touchStartClientY = 0;
 
     const handleMenuPointerDown = (clientX, clientY) => {
         if (!game) return;
         isPointerDownForMenu = true;
         const { x, y } = getCanvasPointer(clientX, clientY);
         lastY = clientY;
+        touchStartClientX = clientX;
+        touchStartClientY = clientY;
         isMoving = false;
 
         const downActions = getPointerDownActions();
@@ -211,6 +215,9 @@ window.onload = async () => {
     const handleMenuPointerMove = (clientX, clientY) => {
         if (!game || !isPointerDownForMenu) return;
         const { x, y } = getCanvasPointer(clientX, clientY);
+        if (Math.abs(clientX - touchStartClientX) > 10 || Math.abs(clientY - touchStartClientY) > 10) {
+            isMoving = true;
+        }
 
         if (game.state === 'HOW_TO_PLAY') {
             const dy = clientY - lastY;
@@ -656,6 +663,11 @@ window.onload = async () => {
     }, { passive: false });
     canvas.addEventListener('touchend', (e) => {
         e.preventDefault();
+        const wasMoving = isMoving;
+        const touch = e.changedTouches && e.changedTouches.length > 0 ? e.changedTouches[0] : null;
+        if (touch && !wasMoving) {
+            handleMenuPointerClick(touch.clientX, touch.clientY);
+        }
         handleMenuPointerUp();
     }, { passive: false });
     canvas.addEventListener('touchcancel', (e) => {
