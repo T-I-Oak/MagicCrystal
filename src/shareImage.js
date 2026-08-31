@@ -146,9 +146,17 @@ function drawShareStage(ctx, stage, map, assets) {
             const tile = stage[y][x];
             const dx = map.x + x * map.tile;
             const dy = map.y + y * map.tile;
-            const image = assets?.getTile?.(tile);
-            if (image) {
-                ctx.drawImage(image, dx, dy, map.tile, map.tile);
+            const openGroundImage = assets?.getTile?.(0);
+            const tileImage = assets?.getTile?.(tile);
+            if (openGroundImage) {
+                ctx.drawImage(openGroundImage, dx, dy, map.tile, map.tile);
+            } else {
+                ctx.fillStyle = TILE_COLORS[0];
+                ctx.fillRect(dx, dy, map.tile, map.tile);
+            }
+            if (tile === 0) continue;
+            if (tileImage) {
+                ctx.drawImage(tileImage, dx, dy, map.tile, map.tile);
             } else {
                 ctx.fillStyle = TILE_COLORS[tile] || TILE_COLORS[0];
                 ctx.fillRect(dx, dy, map.tile, map.tile);

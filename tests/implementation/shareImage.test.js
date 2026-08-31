@@ -82,6 +82,45 @@ describe('extra map share image', () => {
         expect(context.fillRect).toHaveBeenCalledWith(144 + 23 * 38, 170 + 12 * 38, 38, 38);
     });
 
+    it('overlays each non-empty stage tile on open ground', () => {
+        const context = createMockContext();
+        const logo = { width: 800, height: 220 };
+        const player = { width: 40, height: 40 };
+        const openGround = { id: 'open-ground' };
+        const portal = { id: 'portal' };
+        const rock = { id: 'rock' };
+        const payload = createExtraMapShareImagePayload({
+            stage: createStage(2),
+            difficulty: 5,
+            url: 'https://example.test/MagicCrystal/?map=test'
+        });
+        const assets = {
+            logo,
+            player: { standRight: player },
+            getTile: vi.fn((tile) => {
+                if (tile === 0) return openGround;
+                if (tile === 2) return rock;
+                if (tile === 3) return portal;
+                return { id: `tile-${tile}` };
+            })
+        };
+
+        paintExtraMapShareImage(context, payload, assets);
+
+        expect(context.drawImage).toHaveBeenCalledWith(openGround, 144, 170, 38, 38);
+        expect(context.drawImage).toHaveBeenCalledWith(portal, 144, 170, 38, 38);
+        expect(context.drawImage).toHaveBeenCalledWith(openGround, 144 + 38, 170, 38, 38);
+        expect(context.drawImage).toHaveBeenCalledWith(rock, 144 + 38, 170, 38, 38);
+
+        const firstCellGroundCall = context.drawImage.mock.invocationCallOrder[
+            context.drawImage.mock.calls.findIndex(call => call[0] === openGround && call[1] === 144 && call[2] === 170)
+        ];
+        const firstCellPortalCall = context.drawImage.mock.invocationCallOrder[
+            context.drawImage.mock.calls.findIndex(call => call[0] === portal && call[1] === 144 && call[2] === 170)
+        ];
+        expect(firstCellGroundCall).toBeLessThan(firstCellPortalCall);
+    });
+
     it('requires the logo image', () => {
         const context = createMockContext();
         const payload = createExtraMapShareImagePayload({
