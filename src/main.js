@@ -144,26 +144,60 @@ window.onload = async () => {
 
     // Touch Controls Binding
     const btns = document.querySelectorAll('#touch-controls .btn');
+    const activeSoftPadTouches = new Map();
+
+    const releaseSoftPadTouch = (touch) => {
+        const key = activeSoftPadTouches.get(touch.identifier);
+        if (!key) return;
+        game.input.setVirtualKey(key, false);
+        activeSoftPadTouches.delete(touch.identifier);
+    };
+
+    const releaseSoftPadTouches = (touches) => {
+        Array.from(touches || []).forEach(releaseSoftPadTouch);
+    };
+
+    const clearSoftPadTouches = () => {
+        activeSoftPadTouches.forEach((key) => {
+            game.input.setVirtualKey(key, false);
+        });
+        activeSoftPadTouches.clear();
+    };
+
     btns.forEach(btn => {
         const key = btn.getAttribute('data-key');
 
         const down = (e) => {
             e.preventDefault();
+            Array.from(e.changedTouches || []).forEach((touch) => {
+                activeSoftPadTouches.set(touch.identifier, key);
+            });
             game.input.setVirtualKey(key, true);
         };
         const up = (e) => {
             e.preventDefault();
+            if (e.changedTouches) {
+                releaseSoftPadTouches(e.changedTouches);
+                return;
+            }
             game.input.setVirtualKey(key, false);
         };
 
         // Touch Events
         btn.addEventListener('touchstart', down, { passive: false });
         btn.addEventListener('touchend', up, { passive: false });
+        btn.addEventListener('touchcancel', up, { passive: false });
 
         // Mouse Events (for testing on Desktop)
         btn.addEventListener('mousedown', down);
         btn.addEventListener('mouseup', up);
         btn.addEventListener('mouseleave', up); // Ensure release if slide out
+    });
+    window.addEventListener('touchend', (e) => releaseSoftPadTouches(e.changedTouches), { passive: true });
+    window.addEventListener('touchcancel', (e) => releaseSoftPadTouches(e.changedTouches), { passive: true });
+    window.addEventListener('blur', clearSoftPadTouches);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) clearSoftPadTouches();
     });
 
     // Disable double tap zoom on buttons
