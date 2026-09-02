@@ -1,6 +1,6 @@
 {
   "name": "magiccrystal",
-  "version": "0.12.6",
+  "version": "1.0.0",
   "description": "Magic Crystal - A retro-style puzzle action game.",
   "type": "commonjs",
   "scripts": {
