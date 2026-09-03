@@ -1,17 +1,1 @@
-[
-  {
-    "version": "1.0",
-    "date": "2026-09-03",
-    "content": [
-      {
-        "type": "new",
-        "text": {
-          "lang-store": {
-            "ja": "初版リリース",
-            "en": "Initial release."
-          }
-        }
-      }
-    ]
-  }
-]
+[]

@@ -38,22 +38,21 @@
   "badge": {
     "content": {
       "lang-store": {
-        "ja": "9月3日 v1.0 公開！",
-        "en": "September 3 v1.0 Released!"
+        "ja": "9月公開予定",
+        "en": "Coming in September"
       }
     },
-    "type": "info",
-    "featuredUntil": "2026-10-31"
+    "type": "info"
   },
   "button": {
     "content": {
       "lang-store": {
-        "ja": "PLAY NOW",
-        "en": "PLAY NOW"
+        "ja": "COMING SOON",
+        "en": "COMING SOON"
       }
     },
     "url": "https://t-i-oak.github.io/MagicCrystal/",
-    "type": "published"
+    "type": "pending"
   },
   "image": "assets/thumbnail.png"
 }
