@@ -1,8 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Game } from '../../src/Game.js';
+import { createInitialSettings, Game } from '../../src/Game.js';
 import { createBlankHeldMap, HELD_MAP_LIMIT } from '../../src/extraMapData.js';
 import { decodeSharedMap, encodeSharedMap } from '../../src/sharedMapCodec.js';
 import packageData from '../../package.json';
+
+function calculateInitialScreenAndPadHeight(viewportWidth, viewportHeight, settings) {
+    const fitScale = Math.max(0.1, Math.min(
+        (viewportWidth - 10) / 960,
+        (viewportHeight - 10) / 660
+    ));
+    const screenHeight = Math.floor(660 * fitScale * (settings.screenSize / 100)) + 8;
+    const padHeight = 270 * (settings.padSize / 100);
+    return screenHeight + padHeight;
+}
 
 describe('Game Class', () => {
     let mockCanvas;
@@ -48,6 +58,28 @@ describe('Game Class', () => {
     it('should have 3 lives initially', () => {
         const game = new Game(mockCanvas, mockAssets);
         expect(game.lives).toBe(3);
+    });
+
+    it('initializes the first-run screen and soft pad sizes to fit the viewport height', () => {
+        const settings = createInitialSettings({ width: 1200, height: 900 });
+
+        expect(settings).toMatchObject({
+            padType: 1,
+            padPosX: 50,
+            padSize: 80,
+            screenSize: 80,
+            targetFPS: 45
+        });
+        expect(settings.padPosY).toBe(12);
+        expect(calculateInitialScreenAndPadHeight(1200, 900, settings)).toBeLessThanOrEqual(880);
+    });
+
+    it('uses a bottom-aligned soft pad position for first-run settings', () => {
+        const settings = createInitialSettings({ width: 768, height: 900 });
+        const padHeight = 270 * (settings.padSize / 100);
+
+        expect(settings.padSize).toBe(settings.screenSize);
+        expect(settings.padPosY).toBeCloseTo((padHeight / 2 / 900) * 100, 1);
     });
 
     it('keeps settings FPS at the lower bound used by the slider', () => {

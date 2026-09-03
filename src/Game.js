@@ -53,6 +53,14 @@ const HOW_TO_PLAY_SCROLL_MAX = 2300;
 const EXTRA_MAP_EDITOR_CONTROLS_SCROLL_MAX = 470;
 const SETTINGS_FPS_MIN = 10;
 const SETTINGS_FPS_MAX = 60;
+const INITIAL_SCREEN_PAD_GAP = 20;
+const INITIAL_PAD_BASE_HEIGHT = 270;
+const INITIAL_GAME_BORDER_WIDTH = 8;
+const INITIAL_GAME_FIT_MARGIN = 2;
+const SETTINGS_PAD_SIZE_MIN = 50;
+const SETTINGS_PAD_SIZE_MAX = 150;
+const SETTINGS_SCREEN_SIZE_MIN = 50;
+const SETTINGS_SCREEN_SIZE_MAX = 100;
 
 export class Game {
     constructor(canvas, assets) {
@@ -119,12 +127,13 @@ export class Game {
         });
 
         // Settings
-        this.padType = 1; // 0: None, 1: Single, 2: Dual (Changed from 0:S, 1:D)
-        this.padPosX = 50; // 0-100%
-        this.padPosY = 25;  // 0-100% (Default 25 to avoid off-screen)
-        this.padSize = 100;
-        this.screenSize = 100; // 50-100% Game Screen Scale
-        this.tempScreenSize = 100; // Preview
+        const defaultSettings = createInitialSettings();
+        this.padType = defaultSettings.padType; // 0: None, 1: Single, 2: Dual
+        this.padPosX = defaultSettings.padPosX; // 0-100%
+        this.padPosY = defaultSettings.padPosY; // 0-100%
+        this.padSize = defaultSettings.padSize;
+        this.screenSize = defaultSettings.screenSize; // 50-100% Game Screen Scale
+        this.tempScreenSize = defaultSettings.screenSize; // Preview
         this.loadSettings(); // Load saved settings (will update screenSize & tempScreenSize)
         this.updatePadLayout(); // Initial Apply
 
@@ -1178,16 +1187,16 @@ export class Game {
             // Drag behavior is handled in main.js (mousedown/touchstart on .drag-handle)
         } else if (this.settingsCursor === 3) {
             // PAD SIZE
-            if (holdLeft) this.padSize = Math.max(50, this.padSize - 1);
-            if (holdRight) this.padSize = Math.min(150, this.padSize + 1);
+            if (holdLeft) this.padSize = Math.max(SETTINGS_PAD_SIZE_MIN, this.padSize - 1);
+            if (holdRight) this.padSize = Math.min(SETTINGS_PAD_SIZE_MAX, this.padSize + 1);
             if (holdLeft || holdRight) {
                 this.updatePadLayout();
                 this.saveSettings();
             }
         } else if (this.settingsCursor === 4) {
             // SCREEN SIZE
-            if (holdLeft) this.tempScreenSize = Math.max(50, this.tempScreenSize - 1);
-            if (holdRight) this.tempScreenSize = Math.min(100, this.tempScreenSize + 1);
+            if (holdLeft) this.tempScreenSize = Math.max(SETTINGS_SCREEN_SIZE_MIN, this.tempScreenSize - 1);
+            if (holdRight) this.tempScreenSize = Math.min(SETTINGS_SCREEN_SIZE_MAX, this.tempScreenSize + 1);
             if (!this.input.isPointerDown && !this.input.keys.ArrowLeft && !this.input.keys.ArrowRight && !this.input.keys.a && !this.input.keys.d && this.screenSize !== this.tempScreenSize) {
                 // Apply on release (Keyboard or PointerUp)
                 this.screenSize = this.tempScreenSize;
@@ -1523,6 +1532,57 @@ export class Game {
     saveSettings() {
         this.dataStore.saveSettings(this.createSettingsSnapshot());
     }
+}
+
+export function createInitialSettings(viewportSize = getInitialViewportSize()) {
+    const viewportWidth = getPositiveNumber(viewportSize.width, 960);
+    const viewportHeight = getPositiveNumber(viewportSize.height, 960);
+    const fitScale = Math.max(0.1, Math.min(
+        (viewportWidth - INITIAL_GAME_BORDER_WIDTH - INITIAL_GAME_FIT_MARGIN) / 960,
+        (viewportHeight - INITIAL_GAME_BORDER_WIDTH - INITIAL_GAME_FIT_MARGIN) / 660
+    ));
+    const baseScreenHeight = Math.floor(660 * fitScale) + INITIAL_GAME_BORDER_WIDTH;
+
+    const size = clampAndFloor(
+        ((viewportHeight - INITIAL_SCREEN_PAD_GAP) / (baseScreenHeight + INITIAL_PAD_BASE_HEIGHT)) * 100,
+        SETTINGS_SCREEN_SIZE_MIN,
+        SETTINGS_SCREEN_SIZE_MAX
+    );
+    const padSize = size;
+    const screenSize = size;
+
+    const padHeight = INITIAL_PAD_BASE_HEIGHT * (padSize / 100);
+    const padPosY = Math.max(0, (padHeight / 2 / viewportHeight) * 100);
+
+    return {
+        padType: 1,
+        padPosX: 50,
+        padPosY: roundToTenth(padPosY),
+        padSize,
+        screenSize,
+        targetFPS: 45
+    };
+}
+
+function getInitialViewportSize() {
+    const visualViewport = globalThis.window?.visualViewport;
+    return {
+        width: visualViewport?.width ?? globalThis.window?.innerWidth ?? 960,
+        height: visualViewport?.height ?? globalThis.window?.innerHeight ?? 960
+    };
+}
+
+function getPositiveNumber(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
+function clampAndFloor(value, min, max) {
+    return Math.floor(Math.max(min, Math.min(max, value)));
+}
+
+function roundToTenth(value) {
+    return Math.round(value * 10) / 10;
 }
 
 function cloneStageData(stage) {
